@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { CurrencyCode } from '../types';
 import { CURRENCIES_CONFIG } from '../lib/currency';
+import SyrianNewFlag from './icons/SyrianNewFlag';
 import {
   Search,
   ShoppingCart,
@@ -108,10 +109,14 @@ export default function Header() {
             <div className="relative">
               <button
                 onClick={() => setIsCurrencyDropdownOpen(!isCurrencyDropdownOpen)}
-                className="flex items-center gap-1 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 transition-colors"
+                className="flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700/80 text-slate-800 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-700 transition-colors"
                 title="تغيير العملة"
               >
-                <span>{CURRENCIES_CONFIG[currency].flag}</span>
+                {currency === 'SYP' ? (
+                  <SyrianNewFlag className="w-4 h-3 rounded-xs" />
+                ) : (
+                  <span>{CURRENCIES_CONFIG[currency].flag}</span>
+                )}
                 <span className="text-amber-500 font-bold">{CURRENCIES_CONFIG[currency].symbol}</span>
                 <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
@@ -143,7 +148,11 @@ export default function Header() {
                           }`}
                         >
                           <div className="flex items-center gap-1.5">
-                            <span>{item.flag}</span>
+                            {c === 'SYP' ? (
+                              <SyrianNewFlag className="w-4 h-3 rounded-xs" />
+                            ) : (
+                              <span>{item.flag}</span>
+                            )}
                             <span>{c}</span>
                           </div>
                           <span className="font-mono text-amber-500 font-bold">{item.symbol}</span>

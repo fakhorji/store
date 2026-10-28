@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { saveCurrencySettings } from '../../lib/supabase';
 import { fetchLiveExchangeRates } from '../../lib/currency';
+import SyrianNewFlag from '../icons/SyrianNewFlag';
 import { useToast } from '../../context/ToastContext';
 import {
   DollarSign,
@@ -169,7 +170,7 @@ export default function AdminCurrency() {
           <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <span>🇸🇾</span>
+                <SyrianNewFlag className="w-5 h-3.5 rounded-xs" />
                 <span>الليرة السورية (SYP)</span>
               </span>
               <span className="text-[11px] font-mono text-slate-400">1 USD =</span>

@@ -145,6 +145,16 @@ export interface StoreSettings {
   currency_api_endpoint?: string;
   currency_api_key?: string;
   payment_methods?: PaymentMethod[];
+  // Royal Popup Ad Settings
+  popup_ad_enabled?: boolean;
+  popup_ad_title?: string;
+  popup_ad_subtitle?: string;
+  popup_ad_description?: string;
+  popup_ad_image?: string;
+  popup_ad_badge?: string;
+  popup_ad_button_text?: string;
+  popup_ad_button_link?: string;
+  popup_ad_delay_seconds?: number;
 }
 
 export interface CartItem {

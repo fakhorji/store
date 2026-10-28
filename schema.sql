@@ -124,8 +124,29 @@ CREATE TABLE IF NOT EXISTS settings (
     {"id": "pm-syriatel", "name": "سيريتل كاش (Syriatel Cash)", "nameEn": "Syriatel Cash", "icon": "PhoneCall", "description": "دفع عبر سيريتل كاش في سوريا", "is_active": true, "sort_order": 5},
     {"id": "pm-bank", "name": "حوالات الهرم والفؤاد", "nameEn": "Haram / Fouad", "icon": "Landmark", "description": "إرسال حوالة بالليرة السورية أو الدولار", "is_active": true, "sort_order": 6}
   ]'::jsonb,
+  -- أعمدة الإعلان الملكي المنبثق في الصفحة الرئيسية (Royal Popup Ad)
+  popup_ad_enabled BOOLEAN DEFAULT true,
+  popup_ad_title TEXT DEFAULT 'عروض ملكية كبرى: خصم 20% على شحن الألعاب والبطاقات!',
+  popup_ad_subtitle TEXT DEFAULT 'لفترة محدودة - استمتع بأقوى العروض الحصرية',
+  popup_ad_description TEXT DEFAULT 'احصل على أرخص الأسعار لشحن شدات ببجي، بطاقات بلايستيشن، واشتراكات بريميوم مع تسليم فوري ومباشر عبر واتساب.',
+  popup_ad_image TEXT DEFAULT 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
+  popup_ad_badge TEXT DEFAULT 'عرض ملكي حصري 👑',
+  popup_ad_button_text TEXT DEFAULT 'اطلب العرض عبر واتساب الآن',
+  popup_ad_button_link TEXT DEFAULT '',
+  popup_ad_delay_seconds INTEGER DEFAULT 2,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ترقية جدول الإعدادات بإضافة الأعمدة الجديدة إن كانت الجداول موجودة مسبقاً
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_enabled BOOLEAN DEFAULT true;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_title TEXT DEFAULT 'عروض ملكية كبرى: خصم 20% على شحن الألعاب والبطاقات!';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_subtitle TEXT DEFAULT 'لفترة محدودة - استمتع بأقوى العروض الحصرية';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_description TEXT DEFAULT 'احصل على أرخص الأسعار لشحن شدات ببجي، بطاقات بلايستيشن، واشتراكات بريميوم مع تسليم فوري ومباشر عبر واتساب.';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_image TEXT DEFAULT 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_badge TEXT DEFAULT 'عرض ملكي حصري 👑';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_button_text TEXT DEFAULT 'اطلب العرض عبر واتساب الآن';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_button_link TEXT DEFAULT '';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_delay_seconds INTEGER DEFAULT 2;
 
 -- 8. جدول أسعار العملات ومعدل الصرف (Currency Rates & Settings)
 CREATE TABLE IF NOT EXISTS currency_rates (

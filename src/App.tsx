@@ -16,6 +16,7 @@ import Footer from './components/Footer';
 import GlobalLoading from './components/GlobalLoading';
 import AdminPanel from './components/admin/AdminPanel';
 import AdminLoginModal from './components/admin/AdminLoginModal';
+import RoyalAdPopup from './components/RoyalAdPopup';
 import {
   Zap,
   ShieldCheck,
@@ -189,6 +190,9 @@ function Storefront() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Royal Luxury Homepage Popup Announcement */}
+      <RoyalAdPopup />
 
       {/* Product Detail Modal */}
       <ProductDetailModal

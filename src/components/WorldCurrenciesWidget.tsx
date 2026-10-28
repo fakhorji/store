@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '../context/StoreContext';
 import { MAJOR_WORLD_CURRENCIES } from '../lib/currency';
+import SyrianNewFlag from './icons/SyrianNewFlag';
 import { Globe2, Search, ArrowUpDown, TrendingUp, Sparkles, RefreshCw } from 'lucide-react';
 
 export default function WorldCurrenciesWidget() {
@@ -134,7 +135,11 @@ export default function WorldCurrenciesWidget() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xl">{curr.flag}</span>
+                    {curr.code === 'SYP' ? (
+                      <SyrianNewFlag className="w-5 h-3.5 rounded-xs shadow-xs" />
+                    ) : (
+                      <span className="text-xl">{curr.flag}</span>
+                    )}
                     <span className="font-mono font-black text-xs text-slate-900 dark:text-white">
                       {curr.code}
                     </span>

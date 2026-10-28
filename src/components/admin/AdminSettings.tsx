@@ -14,7 +14,12 @@ import {
   Trash2,
   Check,
   Store,
+  Crown,
+  Sparkles,
+  Eye,
+  Flame,
 } from 'lucide-react';
+import RoyalAdPopup from '../RoyalAdPopup';
 
 export default function AdminSettings() {
   const { settings, setSettings, refreshData } = useStore();
@@ -23,6 +28,7 @@ export default function AdminSettings() {
   const [form, setForm] = useState(settings);
   const [newPaymentName, setNewPaymentName] = useState('');
   const [newPaymentDesc, setNewPaymentDesc] = useState('');
+  const [showPreviewPopup, setShowPreviewPopup] = useState(false);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -361,6 +367,156 @@ export default function AdminSettings() {
           </div>
         </div>
       </div>
+
+      {/* 5. Royal Homepage Popup Ad Management (إدارة الإعلان الملكي المنبثق) */}
+      <div className="p-5 rounded-2xl bg-gradient-to-b from-slate-900 to-amber-950/20 border-2 border-amber-500/40 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h4 className="font-black text-sm text-white flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center">
+                <Crown className="w-3.5 h-3.5 fill-slate-950" />
+              </div>
+              <span>إدارة الإعلان الملكي المنبثق في الصفحة الرئيسية (Royal Popup Ad)</span>
+            </h4>
+            <p className="text-xs text-slate-400 mt-1">
+              نافذة منبثقة بتصميم ملكي فاخر وألوان ذهبية تظهر لزوار المتجر لتقديم العروض الحصرية وزيادة المبيعات عبر واتساب
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowPreviewPopup(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs border border-amber-500/30 transition-all cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>معاينة الإعلان الملكي</span>
+            </button>
+
+            {/* Toggle Active Status */}
+            <label className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.popup_ad_enabled ?? true}
+                onChange={(e) => setForm({ ...form, popup_ad_enabled: e.target.checked })}
+                className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
+              />
+              <span className="text-xs font-bold text-white">
+                {form.popup_ad_enabled ? 'مفعّل وشغال' : 'معطّل ومخفي'}
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {/* Form Fields for Royal Popup */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs text-slate-300 font-bold block mb-1">
+              عنوان الإعلان الملكي الرئيسي
+            </label>
+            <input
+              type="text"
+              placeholder="مثال: عروض ملكية كبرى: خصم 20% على شحن الألعاب والبطاقات!"
+              value={form.popup_ad_title || ''}
+              onChange={(e) => setForm({ ...form, popup_ad_title: e.target.value })}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-300 font-bold block mb-1">
+              العنوان الفرعي أو التميز الذهبي
+            </label>
+            <input
+              type="text"
+              placeholder="مثال: لفترة محدودة - استمتع بأقوى العروض الحصرية"
+              value={form.popup_ad_subtitle || ''}
+              onChange={(e) => setForm({ ...form, popup_ad_subtitle: e.target.value })}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-300 font-bold block mb-1">
+              شارة العرض (Badge)
+            </label>
+            <input
+              type="text"
+              placeholder="مثال: عرض ملكي حصري 👑"
+              value={form.popup_ad_badge || ''}
+              onChange={(e) => setForm({ ...form, popup_ad_badge: e.target.value })}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-300 font-bold block mb-1">
+              توقيت ظهور الإعلان بعد فتح المتجر (بالثواني)
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="60"
+              step="1"
+              value={form.popup_ad_delay_seconds ?? 2}
+              onChange={(e) => setForm({ ...form, popup_ad_delay_seconds: parseInt(e.target.value) || 2 })}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="text-xs text-slate-300 font-bold block mb-1">
+              تفاصيل ووصف العرض الملكي
+            </label>
+            <textarea
+              rows={2}
+              placeholder="اكتب شرحاً مشجعاً يوضح للزبون محتويات العرض والميزات..."
+              value={form.popup_ad_description || ''}
+              onChange={(e) => setForm({ ...form, popup_ad_description: e.target.value })}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:border-amber-500 focus:outline-none resize-none"
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <ImageUploadField
+              label="صورة الإعلان الملكي (من الجهاز أو رابط مباشر)"
+              value={form.popup_ad_image || ''}
+              onChange={(url) => setForm({ ...form, popup_ad_image: url })}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-300 font-bold block mb-1">
+              نص زر الطلب
+            </label>
+            <input
+              type="text"
+              placeholder="اطلب العرض عبر واتساب الآن"
+              value={form.popup_ad_button_text || ''}
+              onChange={(e) => setForm({ ...form, popup_ad_button_text: e.target.value })}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-slate-300 font-bold block mb-1">
+              رابط الزر المخصص (اختياري)
+            </label>
+            <input
+              type="text"
+              placeholder="اتركه فارغاً لفتح محادثة واتساب تلقائياً مع تفاصيل العرض"
+              value={form.popup_ad_button_link || ''}
+              onChange={(e) => setForm({ ...form, popup_ad_button_link: e.target.value })}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Live Preview Modal for Admin */}
+      {showPreviewPopup && (
+        <RoyalAdPopup forceShow={true} onClosePreview={() => setShowPreviewPopup(false)} />
+      )}
 
       {/* Save Button */}
       <div className="pt-2">

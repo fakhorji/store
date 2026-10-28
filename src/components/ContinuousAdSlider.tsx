@@ -110,21 +110,25 @@ export default function ContinuousAdSlider() {
         </span>
       </div>
 
-      {/* Marquee Wrapper with subtle side gradient fades */}
-      <div className="relative w-full overflow-hidden py-2">
+      {/* Marquee Wrapper with subtle side gradient fades - explicit dir="ltr" to ensure zero blank start in RTL */}
+      <div className="relative w-full overflow-hidden py-2" dir="ltr">
         {/* Soft edge masks */}
         <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-slate-50 dark:from-slate-950 to-transparent z-10" />
         <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-slate-50 dark:from-slate-950 to-transparent z-10" />
 
-        {/* Continuous Vortex Track: Two identical clones loop endlessly from -50% to 0% with ZERO gap */}
+        {/* Continuous Vortex Track: 3 identical clones loop endlessly from -33.333333% to 0% with ZERO gap and ZERO blank start */}
         <div className="animate-vortex-track flex items-center">
           {/* Group 1 */}
           <div className="flex shrink-0 items-center gap-4 px-2">
             {groupBanners.map((banner, idx) => renderCard(banner, `g1-${idx}`))}
           </div>
-          {/* Group 2 (Identical clone for seamless continuous vortex) */}
+          {/* Group 2 (Immediately visible in viewport from millisecond 0) */}
           <div className="flex shrink-0 items-center gap-4 px-2" aria-hidden="true">
             {groupBanners.map((banner, idx) => renderCard(banner, `g2-${idx}`))}
+          </div>
+          {/* Group 3 (Overflow buffer) */}
+          <div className="flex shrink-0 items-center gap-4 px-2" aria-hidden="true">
+            {groupBanners.map((banner, idx) => renderCard(banner, `g3-${idx}`))}
           </div>
         </div>
       </div>

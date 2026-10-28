@@ -200,34 +200,36 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar: Royal Developer Container & Copyright */}
-        <div className="pt-8 border-t border-slate-800/90 flex flex-col md:flex-row items-center justify-between gap-5">
+        {/* Bottom Bar: Single Horizontal Row for Copyright & Developer Attribution */}
+        <div className="pt-6 border-t border-slate-800/90 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           {/* Copyright text */}
-          <div className="flex items-center gap-1.5 text-slate-400 text-xs text-center md:text-right">
+          <div className="flex items-center gap-1.5 text-slate-400 text-xs shrink-0">
             <span>جميع الحقوق محفوظة © {new Date().getFullYear()}</span>
             <span className="text-white font-bold">{settings.store_name}</span>
           </div>
 
-          {/* ROYAL DEVELOPER CONTAINER WITH REPEATING SHIMMER & GLOW EFFECT */}
-          <div className="relative group">
-            <div className="royal-container relative flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 border border-amber-500/40 shadow-xl backdrop-blur-md transition-all">
-              {/* Crown Icon */}
-              <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center shadow-md shrink-0">
-                <Crown className="w-4 h-4 fill-slate-950 stroke-[2]" />
-              </div>
+          {/* ROYAL DEVELOPER CONTAINER ON SAME HORIZONTAL LINE WITH PULSING HEART */}
+          <div className="royal-container flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 border border-amber-500/40 shadow-lg backdrop-blur-md">
+            {/* Crown Icon */}
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center shadow-xs shrink-0">
+              <Crown className="w-3.5 h-3.5 fill-slate-950 stroke-[2]" />
+            </div>
 
-              {/* Royal Text & Link */}
-              <div className="flex items-center gap-1.5 text-xs font-bold">
-                <span className="text-slate-200">تمت برمجة المتجر بكل حب عن طريق</span>
-                <a
-                  href="https://alibuild.sbs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="royal-shimmer-text font-black text-sm tracking-wide hover:brightness-125 transition-all focus:outline-none drop-shadow-md"
-                >
-                  alibuild
-                </a>
-              </div>
+            {/* Royal Text with Interactive Pulsing Heart (No word 'حب') */}
+            <div className="flex items-center gap-1 text-xs font-bold text-slate-200">
+              <span>تمت برمجة المتجر بـ</span>
+              <span title="نبض الإتقان والتميز" className="inline-flex items-center">
+                <Heart className="w-4 h-4 fill-rose-500 text-rose-500 animate-pulse hover:scale-135 transition-transform duration-300 inline-block drop-shadow-[0_0_8px_rgba(244,63,94,0.6)] cursor-pointer" />
+              </span>
+              <span>عن طريق</span>
+              <a
+                href="https://alibuild.sbs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="royal-shimmer-text font-black text-sm tracking-wide hover:brightness-125 transition-all focus:outline-none drop-shadow-md mr-0.5"
+              >
+                alibuild
+              </a>
             </div>
           </div>
         </div>

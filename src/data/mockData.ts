@@ -83,8 +83,16 @@ export const INITIAL_SETTINGS: StoreSettings = {
   admin_email: 'admin@store.com',
   admin_password: 'admin123456',
   currency_api_endpoint: 'https://open.er-api.com/v6/latest/USD',
-  currency_api_key: '',
   payment_methods: INITIAL_PAYMENT_METHODS,
+  popup_ad_enabled: true,
+  popup_ad_title: 'عروض ملكية كبرى: خصم 20% على شحن الألعاب والبطاقات!',
+  popup_ad_subtitle: 'لفترة محدودة - استمتع بأقوى العروض الحصرية',
+  popup_ad_description: 'احصل على أرخص الأسعار لشحن شدات ببجي، بطاقات بلايستيشن، واشتراكات بريميوم مع تسليم فوري ومباشر عبر واتساب.',
+  popup_ad_image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
+  popup_ad_badge: 'عرض ملكي حصري 👑',
+  popup_ad_button_text: 'اطلب العرض عبر واتساب الآن',
+  popup_ad_button_link: '',
+  popup_ad_delay_seconds: 2,
 };
 
 export const INITIAL_CATEGORIES: Category[] = [
