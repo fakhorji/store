@@ -84,6 +84,7 @@ export function formatCurrencyPrice(
 
 /**
  * Parse any raw API endpoint or curl command into clean URL and API Key
+ * Automatically normalizes local Syrian platforms (SP-Today) and international providers
  */
 export function extractApiEndpointAndKey(
   rawEndpoint?: string,
@@ -93,13 +94,13 @@ export function extractApiEndpointAndKey(
   let apiKey = (rawKey || '').trim();
 
   // If the user pasted a curl command like:
-  // curl -H "apikey: fca_live_..." "https://api.freecurrencyapi.com/v1/latest"
+  // curl -H "apikey: ..." "https://..." or curl -H "X-API-KEY: ..."
   if (endpoint.toLowerCase().includes('curl')) {
     const urlMatch = endpoint.match(/https?:\/\/[^\s"']+/);
     if (urlMatch) {
       endpoint = urlMatch[0];
     }
-    const keyMatch = endpoint.match(/(?:apikey|key|token)[:\s="']+([a-zA-Z0-9_\-]+)/i);
+    const keyMatch = endpoint.match(/(?:x-api-key|apikey|api_key|api-key|key|token|bearer)[:\s="']+([a-zA-Z0-9_\-]+)/i);
     if (keyMatch && !apiKey) {
       apiKey = keyMatch[1];
     }
@@ -107,17 +108,21 @@ export function extractApiEndpointAndKey(
 
   // Also check if user pasted a curl command into the key field by mistake
   if (apiKey.toLowerCase().includes('curl')) {
-    const keyMatch = apiKey.match(/(?:apikey|key|token)[:\s="']+([a-zA-Z0-9_\-]+)/i);
+    const keyMatch = apiKey.match(/(?:x-api-key|apikey|api_key|api-key|key|token|bearer)[:\s="']+([a-zA-Z0-9_\-]+)/i);
     if (keyMatch) {
       apiKey = keyMatch[1];
     }
   }
 
-  // If URL contains apikey query parameter, extract it if apiKey is empty
-  if (endpoint.includes('apikey=') || endpoint.includes('api_key=')) {
+  // If URL contains apikey or api_key query parameter, extract it if apiKey is empty
+  if (endpoint.includes('apikey=') || endpoint.includes('api_key=') || endpoint.includes('x-api-key=')) {
     try {
       const parsedUrl = new URL(endpoint);
-      const extracted = parsedUrl.searchParams.get('apikey') || parsedUrl.searchParams.get('api_key');
+      const extracted =
+        parsedUrl.searchParams.get('apikey') ||
+        parsedUrl.searchParams.get('api_key') ||
+        parsedUrl.searchParams.get('x-api-key') ||
+        parsedUrl.searchParams.get('key');
       if (extracted && !apiKey) {
         apiKey = extracted;
       }
@@ -128,6 +133,22 @@ export function extractApiEndpointAndKey(
   endpoint = endpoint.replace(/^["']|["']$/g, '').trim();
   apiKey = apiKey.replace(/^["']|["']$/g, '').trim();
 
+  // Smart normalization for SP-Today (الليرة اليوم / سيريان بوست توداي):
+  // SP-Today requires the `/currencies` route, e.g. https://api-v2.sp-today.com/api/v1/currencies
+  if (endpoint.includes('sp-today.com')) {
+    endpoint = endpoint.replace(/\/+$/, ''); // Strip trailing slash
+    if (!endpoint.endsWith('/currencies')) {
+      if (endpoint.endsWith('/api/v1')) {
+        endpoint = `${endpoint}/currencies`;
+      } else if (endpoint.includes('/api/v1')) {
+        endpoint = endpoint.replace(/\/api\/v1.*$/, '/api/v1/currencies');
+      } else {
+        endpoint = 'https://api-v2.sp-today.com/api/v1/currencies';
+      }
+    }
+  }
+
+  // Default fallback if totally empty
   if (!endpoint) {
     endpoint = 'https://open.er-api.com/v6/latest/USD';
   }
@@ -136,12 +157,14 @@ export function extractApiEndpointAndKey(
 }
 
 /**
- * Fetch live exchange rates from configured or public API (USD to TRY, etc.)
- * Supports:
- * - FreeCurrencyAPI (data.data) with header or query apikey
- * - Open Exchange Rates / Open.er-api (data.rates)
- * - ExchangeRate-API (data.conversion_rates)
- * - Currencylayer (data.quotes)
+ * Fetch live exchange rates from configured or public API (USD to TRY, SYP, EUR, SAR, etc.)
+ * Dynamically supports:
+ * 1) Local Syrian & Middle East Market APIs (SP-Today / الليرة اليوم with Damascus buy/sell rates)
+ * 2) FreeCurrencyAPI (data.data) with header or query apikey
+ * 3) Open Exchange Rates / Open.er-api (data.rates)
+ * 4) ExchangeRate-API (data.conversion_rates)
+ * 5) Currencylayer / Fixer (data.quotes)
+ * 6) Any custom REST JSON endpoint returning currency maps or lists
  */
 export async function fetchLiveExchangeRates(
   customEndpoint?: string,
@@ -164,14 +187,24 @@ export async function fetchLiveExchangeRates(
     };
 
     if (apiKey) {
-      // 1. Pass in headers as FreeCurrencyAPI requests: -H "apikey: <key>"
-      headers['apikey'] = apiKey;
-      headers['Authorization'] = `Bearer ${apiKey}`;
-
-      // 2. Also append as query param for APIs that require it in query string
-      if (!requestUrl.includes('apikey=') && !requestUrl.includes('api_key=')) {
-        const separator = requestUrl.includes('?') ? '&' : '?';
-        requestUrl = `${requestUrl}${separator}apikey=${encodeURIComponent(apiKey)}`;
+      if (endpoint.includes('sp-today.com')) {
+        // SP-Today requires clean X-API-KEY header or api_key query param (duplicate x-api-key headers trigger 401)
+        headers['X-API-KEY'] = apiKey;
+        if (!requestUrl.includes('api_key=')) {
+          const separator = requestUrl.includes('?') ? '&' : '?';
+          requestUrl = `${requestUrl}${separator}api_key=${encodeURIComponent(apiKey)}`;
+        }
+      } else {
+        // Standard providers (FreeCurrencyAPI, ExchangeRate-API, Open Exchange Rates, Custom)
+        headers['apikey'] = apiKey;
+        headers['X-API-KEY'] = apiKey;
+        if (apiKey.toLowerCase().startsWith('bearer ') || apiKey.length > 50) {
+          headers['Authorization'] = apiKey.toLowerCase().startsWith('bearer ') ? apiKey : `Bearer ${apiKey}`;
+        }
+        if (!requestUrl.includes('apikey=') && !requestUrl.includes('api_key=')) {
+          const separator = requestUrl.includes('?') ? '&' : '?';
+          requestUrl = `${requestUrl}${separator}apikey=${encodeURIComponent(apiKey)}`;
+        }
       }
     }
 
@@ -181,10 +214,11 @@ export async function fetchLiveExchangeRates(
     });
 
     if (!res.ok) {
-      let errorDetail = `خطأ HTTP (${res.status} ${res.statusText})`;
+      let errorDetail = `خطأ في الخادم (${res.status} ${res.statusText})`;
       try {
         const errJson = await res.json();
         if (errJson.message) errorDetail += `: ${errJson.message}`;
+        else if (errJson.error) errorDetail += `: ${typeof errJson.error === 'string' ? errJson.error : JSON.stringify(errJson.error)}`;
         else if (errJson.errors) errorDetail += `: ${JSON.stringify(errJson.errors)}`;
       } catch {}
       throw new Error(errorDetail);
@@ -192,11 +226,117 @@ export async function fetchLiveExchangeRates(
 
     const json = await res.json();
 
-    // Resolve rates from various API formats:
-    // 1) FreeCurrencyAPI format: { data: { "TRY": 34.25, "EUR": 0.92 } }
-    // 2) Standard format: { rates: { "TRY": 34.25 } }
-    // 3) ExchangeRate-API v6: { conversion_rates: { "TRY": 34.25 } }
+    // -------------------------------------------------------------
+    // Format A: Array Data (SP-Today / Syrian Market / Currency Lists)
+    // -------------------------------------------------------------
+    const currencyArray = Array.isArray(json)
+      ? json
+      : Array.isArray(json.data?.currencies)
+        ? json.data.currencies
+        : Array.isArray(json.currencies)
+          ? json.currencies
+          : Array.isArray(json.data)
+            ? json.data
+            : null;
+
+    if (currencyArray && currencyArray.length > 0) {
+      const usdItem = currencyArray.find((c: any) => c?.code?.toUpperCase() === 'USD' || c?.slug === 'us-dollar');
+      const tryItem = currencyArray.find((c: any) => c?.code?.toUpperCase() === 'TRY' || c?.slug === 'turkish-lira');
+
+      const isSyrianMarket =
+        usdItem?.cities?.damascus ||
+        currencyArray.some((c: any) => c?.cities || (c?.code === 'USD' && (c?.sell || c?.buy) > 1000));
+
+      if (isSyrianMarket) {
+        // SP-Today & Syrian Market structure: Rates are in Syrian Pounds (SYP) for Damascus
+        const usdSell = Number(
+          usdItem?.cities?.damascus?.sell ||
+          usdItem?.cities?.damascus?.buy ||
+          usdItem?.cities?.alhasakah?.sell ||
+          usdItem?.sell ||
+          usdItem?.buy ||
+          14325
+        );
+        const sypRate = usdSell;
+
+        const trySell = Number(
+          tryItem?.cities?.damascus?.sell ||
+          tryItem?.cities?.damascus?.buy ||
+          tryItem?.cities?.alhasakah?.sell ||
+          tryItem?.sell ||
+          tryItem?.buy ||
+          0
+        );
+
+        // 1 USD in TRY = (1 USD in SYP) / (1 TRY in SYP)
+        const tryRate = trySell > 0 ? Number((usdSell / trySell).toFixed(2)) : undefined;
+
+        const allRates: Record<string, number> = {
+          USD: 1,
+          SYP: sypRate,
+        };
+        if (tryRate) allRates.TRY = tryRate;
+
+        // Calculate USD-based cross rate for all other currencies
+        for (const c of currencyArray) {
+          const code = (c.code || c.symbol || '').toUpperCase();
+          if (!code || code === 'USD') continue;
+          const currSell = Number(
+            c.cities?.damascus?.sell ||
+            c.cities?.damascus?.buy ||
+            c.cities?.alhasakah?.sell ||
+            c.sell ||
+            c.buy ||
+            c.rate
+          );
+          if (currSell > 0) {
+            allRates[code] = Number((usdSell / currSell).toFixed(4));
+          }
+        }
+
+        const source = endpoint.includes('sp-today')
+          ? 'منصة SP-Today (الليرة السورية والتركية المباشرة)'
+          : 'منصة أسعار السوق المحلي';
+
+        return {
+          tryRate,
+          sypRate,
+          allRates,
+          ratesCount: Object.keys(allRates).length,
+          success: true,
+          source,
+        };
+      } else {
+        // Generic list format e.g. [{ code: 'EUR', rate: 0.92 }, { code: 'TRY', rate: 34.25 }]
+        const cleanRates: Record<string, number> = { USD: 1 };
+        for (const item of currencyArray) {
+          const code = (item.code || item.currency || item.symbol || '').toUpperCase();
+          const rate = Number(item.rate || item.value || item.price || item.sell || 0);
+          if (code && rate > 0) {
+            cleanRates[code] = rate;
+          }
+        }
+        if (Object.keys(cleanRates).length > 1) {
+          return {
+            tryRate: cleanRates.TRY ? Number(cleanRates.TRY.toFixed(2)) : undefined,
+            sypRate: cleanRates.SYP ? Number(cleanRates.SYP.toFixed(0)) : undefined,
+            allRates: cleanRates,
+            ratesCount: Object.keys(cleanRates).length,
+            success: true,
+            source: 'مزود أسعار مخصص (قائمة عملات)',
+          };
+        }
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Format B: Map / Key-Value Objects
+    // -------------------------------------------------------------
+    // 1) FreeCurrencyAPI: { data: { "TRY": 34.25, "EUR": 0.92 } }
+    // 2) Open Exchange Rates: { rates: { "TRY": 34.25 } }
+    // 3) ExchangeRate-API: { conversion_rates: { "TRY": 34.25 } }
     // 4) Currencylayer: { quotes: { "USDTRY": 34.25 } }
+    // 5) Flat object
     let rawRates: Record<string, any> | undefined;
 
     if (json.data && typeof json.data === 'object' && !Array.isArray(json.data)) {
@@ -216,11 +356,11 @@ export async function fetchLiveExchangeRates(
     }
 
     if (!rawRates || Object.keys(rawRates).length === 0) {
-      throw new Error('تم استلام الرد بنجاح ولكن لم يتم العثور على حقل أسعار العملات (data أو rates)');
+      throw new Error('تم استلام الرد بنجاح ولكن لم يتم العثور على حقل أسعار العملات في هيكل البيانات');
     }
 
     // Sanitize rates to numbers
-    const cleanRates: Record<string, number> = {};
+    const cleanRates: Record<string, number> = { USD: 1 };
     for (const [k, v] of Object.entries(rawRates)) {
       const num = Number(v);
       if (!isNaN(num) && num > 0) {
@@ -233,10 +373,11 @@ export async function fetchLiveExchangeRates(
     const sypRate = cleanRates.SYP ? Number(cleanRates.SYP.toFixed(0)) : undefined;
 
     // Detect provider name
-    let provider = 'مزود مخصص';
+    let provider = 'مزود أسعار مخصص (Custom API)';
     if (endpoint.includes('freecurrencyapi.com')) provider = 'FreeCurrencyAPI (نشط)';
     else if (endpoint.includes('er-api.com')) provider = 'Open Exchange Rates (مجاني)';
     else if (endpoint.includes('exchangerate-api.com')) provider = 'ExchangeRate-API';
+    else if (endpoint.includes('sp-today.com')) provider = 'SP-Today (الليرة اليوم)';
 
     return {
       tryRate,
@@ -251,7 +392,7 @@ export async function fetchLiveExchangeRates(
     return {
       success: false,
       source: 'خطأ في الاتصال بالـ API',
-      errorMessage: err?.message || 'تعذر الاتصال بمزود أسعار العملات، تحقق من الرابط والمفتاح',
+      errorMessage: err?.message || 'تعذر الاتصال بمزود أسعار العملات، تحقق من صحة الرابط والمفتاح',
     };
   }
 }

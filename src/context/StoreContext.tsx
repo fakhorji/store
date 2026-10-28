@@ -275,7 +275,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         .then((live) => {
           if (live.success && live.allRates) {
             setWorldRates(live.allRates);
-            if (currRates.mode === 'api' && live.tryRate) {
+            if (currRates.mode === 'api' && (live.tryRate || live.sypRate)) {
               setCurrencySettings((prev) => ({
                 ...prev,
                 try_rate: live.tryRate || prev.try_rate,

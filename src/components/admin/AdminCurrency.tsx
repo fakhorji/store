@@ -44,6 +44,7 @@ export default function AdminCurrency() {
     provider: string;
     message: string;
     tryRate?: number;
+    sypRate?: number;
     ratesCount?: number;
     timestamp?: string;
   } | null>(null);
@@ -58,6 +59,8 @@ export default function AdminCurrency() {
     if (extractedKey) {
       setApiKey(extractedKey);
       showToast('تم استخراج الرابط ومفتاح الـ API تلقائياً من نص curl المنسوخ!', 'success');
+    } else if (val.includes('sp-today') && !val.endsWith('/currencies') && endpoint.endsWith('/currencies')) {
+      showToast('تم ضبط مسار /currencies تلقائياً لمنصة SP-Today لمنع حدوث خطأ 404', 'info');
     }
   };
 
@@ -71,10 +74,16 @@ export default function AdminCurrency() {
   };
 
   // Quick Presets
+  const applySpTodayPreset = () => {
+    setApiEndpoint('https://api-v2.sp-today.com/api/v1/currencies');
+    setApiKey('68570c175d4bb0612a8d193ec475a005');
+    showToast('تم تطبيق منصة SP-Today السورية (الليرة اليوم) ومفتاحك بنجاح! 🇸🇾 اضغط فحص الاتصال للتجربة', 'success');
+  };
+
   const applyFreeCurrencyApiPreset = () => {
     setApiEndpoint('https://api.freecurrencyapi.com/v1/latest');
     setApiKey('fca_live_nhQtnaXKjy4Qwr8rZXfENRhq86eRD1iggbkNRBfT');
-    showToast('تم تطبيق إعدادات FreeCurrencyAPI مع مفتاحك الحي! اضغط "فحص واختبار" للتأكد', 'success');
+    showToast('تم تطبيق إعدادات FreeCurrencyAPI مع مفتاحك الحي! اضغط "فحص الاتصال" للتأكد', 'success');
   };
 
   const applyOpenErPreset = () => {
@@ -100,13 +109,17 @@ export default function AdminCurrency() {
         setDiagnostic({
           status: 'success',
           provider: res.source,
-          message: `تم جلب أسعار الصرف بنجاح تام! تم استلام ${res.ratesCount || Object.keys(res.allRates).length} عملة عالمية.`,
+          message: `تم جلب وتحديث أسعار الصرف بنجاح تام! تم استلام ${res.ratesCount || Object.keys(res.allRates).length} عملة بنجاح.`,
           tryRate: res.tryRate,
+          sypRate: res.sypRate,
           ratesCount: res.ratesCount || Object.keys(res.allRates).length,
           timestamp: new Date().toLocaleTimeString('ar-SA'),
         });
 
-        showToast(`تم الاتصال بنجاح! 1$ = ${res.tryRate || tryRate} ₺ (${res.source})`, 'success');
+        const rateMsg = res.sypRate
+          ? `تم الاتصال بنجاح! 1$ = ${res.sypRate.toLocaleString('ar-SY')} ل.س | 1$ = ${res.tryRate || tryRate} ₺`
+          : `تم الاتصال بنجاح! 1$ = ${res.tryRate || tryRate} ₺ (${res.source})`;
+        showToast(rateMsg, 'success');
       } else {
         setDiagnostic({
           status: 'error',
@@ -114,7 +127,7 @@ export default function AdminCurrency() {
           message: res.errorMessage || 'تعذر استخراج بيانات العملات من الرابط أو المفتاح المُدخل.',
           timestamp: new Date().toLocaleTimeString('ar-SA'),
         });
-        showToast('تعذر الاتصال بالـ API. يرجى مراجعة نافذة الفحص بالأسفل', 'error');
+        showToast('تعذر الاتصال بالـ API. يرجى مراجعة تفاصيل الفحص بالأسفل', 'error');
       }
     } catch (err: any) {
       setDiagnostic({
@@ -250,18 +263,27 @@ export default function AdminCurrency() {
             </div>
 
             {/* Quick 1-Click Preset Buttons */}
-            <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-2">
+            <div className="p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-2.5">
               <span className="text-[11px] font-bold text-slate-300 block">
-                روابط جاهزة بنقرة واحدة (Presets):
+                روابط جاهزة بنقرة واحدة (Presets لمختلف المنصات):
               </span>
               <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={applySpTodayPreset}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+                >
+                  <SyrianNewFlag className="w-4 h-3 rounded-xs" />
+                  <span>تطبيق منصة SP-Today (الليرة السورية والتركية المباشرة) 🇸🇾</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={applyFreeCurrencyApiPreset}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
                 >
                   <Sparkles className="w-3 h-3" />
-                  <span>تطبيق FreeCurrencyAPI مع مفتاحك الحي</span>
+                  <span>تطبيق FreeCurrencyAPI مع مفتاحك الحي 🌐</span>
                 </button>
 
                 <button
@@ -277,28 +299,48 @@ export default function AdminCurrency() {
 
             {/* Detailed Explanation Accordion */}
             {showGuide && (
-              <div className="p-4 rounded-xl bg-cyan-950/20 border border-cyan-800/40 text-xs text-slate-300 space-y-3">
+              <div className="p-4 rounded-xl bg-cyan-950/20 border border-cyan-800/40 text-xs text-slate-300 space-y-3.5">
                 <h5 className="font-bold text-cyan-300 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                  <span>دليل إضافة رابط ومفتاح FreeCurrencyAPI:</span>
+                  <span>دليل إضافة روابط ومفاتيح منصات أسعار العملات:</span>
                 </h5>
-                <p className="leading-relaxed text-slate-300 text-[11px]">
-                  عند استخدام أمر <code className="bg-slate-800 px-1 py-0.5 rounded text-amber-400 font-mono">curl</code> الخاص بك:
-                </p>
-                <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 font-mono text-[11px] text-slate-300 break-all select-all" dir="ltr">
-                  curl -H "apikey: fca_live_nhQtnaXKjy4Qwr8rZXfENRhq86eRD1iggbkNRBfT" "https://api.freecurrencyapi.com/v1/latest"
+
+                <div className="space-y-2.5">
+                  <div className="p-3 rounded-lg bg-slate-900/90 border border-emerald-900/40 space-y-1.5">
+                    <span className="font-bold text-emerald-400 text-xs flex items-center gap-1.5">
+                      <SyrianNewFlag className="w-4 h-2.5 rounded-xs" />
+                      <span>1. المنصة المحلية (SP-Today / الليرة اليوم):</span>
+                    </span>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      الرابط الصحيح لجلب العملات من هذه المنصة هو <span className="font-mono text-cyan-300">https://api-v2.sp-today.com/api/v1/currencies</span> (يقوم النظام تلقائياً بإضافة مسار <code className="bg-slate-800 px-1 rounded text-amber-300 font-mono">currencies</code> حتى لو كتبت رابط البداية فقط لمنع خطأ 404).
+                    </p>
+                    <div className="font-mono text-[11px] text-slate-300 space-y-0.5 select-all" dir="ltr">
+                      <div><strong className="text-slate-400">Endpoint:</strong> https://api-v2.sp-today.com/api/v1/currencies</div>
+                      <div><strong className="text-slate-400">API Key:</strong> 68570c175d4bb0612a8d193ec475a005</div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-slate-900/90 border border-cyan-900/40 space-y-1.5">
+                    <span className="font-bold text-cyan-400 text-xs flex items-center gap-1.5">
+                      <Globe2 className="w-3.5 h-3.5" />
+                      <span>2. المنصات العالمية (مثل FreeCurrencyAPI):</span>
+                    </span>
+                    <div className="font-mono text-[11px] text-slate-300 space-y-0.5 select-all" dir="ltr">
+                      <div><strong className="text-slate-400">Endpoint:</strong> https://api.freecurrencyapi.com/v1/latest</div>
+                      <div><strong className="text-slate-400">API Key:</strong> fca_live_nhQtnaXKjy4Qwr8rZXfENRhq86eRD1iggbkNRBfT</div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-slate-900/90 border border-slate-700/60 space-y-1">
+                    <span className="font-bold text-amber-300 text-xs flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>3. أي منصة أو رابط مخصص ترغب به:</span>
+                    </span>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      الحقول مرنة وغير مقيدة؛ يمكنك إدخال أي رابط Endpoint ومفتاح خاص بك، وسيقوم النظام بتمرير الترويسات المطلوبة وقراءة البيانات سواء كانت بنية مصفوفات (Arrays) أو كائنات (Objects).
+                    </p>
+                  </div>
                 </div>
-                <ul className="space-y-1.5 text-[11px] text-slate-300 pr-4 list-disc">
-                  <li>
-                    <strong className="text-white">حقل رابط الـ Endpoint:</strong> ضع فقط رابط الـ URL المباشر: <span className="font-mono text-cyan-300">https://api.freecurrencyapi.com/v1/latest</span>
-                  </li>
-                  <li>
-                    <strong className="text-white">حقل مفتاح API Key:</strong> ضع فقط المفتاح بدون علامات اقتباس أو كلمة apikey: <span className="font-mono text-amber-300">fca_live_nhQtnaXKjy4Qwr8rZXfENRhq86eRD1iggbkNRBfT</span>
-                  </li>
-                  <li>
-                    <strong className="text-emerald-400">ميزة ذكية:</strong> يمكنك أيضاً لصق أمر <code className="bg-slate-800 px-1 rounded font-mono text-white">curl</code> كاملاً في أي من الحقلين، وسيقوم النظام تلقائياً بفرز الرابط والمفتاح ووضعهما في أماكنهما الصحيحة!
-                  </li>
-                </ul>
               </div>
             )}
 
@@ -311,13 +353,13 @@ export default function AdminCurrency() {
                 </label>
                 <input
                   type="text"
-                  placeholder="https://api.freecurrencyapi.com/v1/latest"
+                  placeholder="https://api-v2.sp-today.com/api/v1/currencies"
                   value={apiEndpoint}
                   onChange={(e) => handleEndpointInput(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none"
                 />
                 <span className="text-[10px] text-slate-400 mt-1 block">
-                  رابط الخدمة لجلب الأسعار اللحظية
+                  رابط الـ API المباشر لأي منصة محلية أو عالمية
                 </span>
               </div>
 
@@ -328,13 +370,13 @@ export default function AdminCurrency() {
                 </label>
                 <input
                   type="text"
-                  placeholder="fca_live_..."
+                  placeholder="مفتاح الـ API الخاص بالمنصة"
                   value={apiKey}
                   onChange={(e) => handleKeyInput(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-amber-500 focus:outline-none"
                 />
                 <span className="text-[10px] text-slate-400 mt-1 block">
-                  يتم تمريره تلقائياً في Header و Query للمزود
+                  يمرره النظام كـ X-API-KEY و apikey و Bearer تلقائياً
                 </span>
               </div>
             </div>
@@ -352,14 +394,14 @@ export default function AdminCurrency() {
               </button>
 
               <span className="text-[11px] text-slate-400">
-                يدعم: FreeCurrencyAPI (data.data)، Open Exchange Rates، وغيرها
+                يدعم: SP-Today (الليرة اليوم)، FreeCurrencyAPI، Open Exchange، وغيرها
               </span>
             </div>
 
             {/* Live Diagnostic Box */}
             {diagnostic && (
               <div
-                className={`p-4 rounded-xl border text-xs space-y-2 transition-all ${
+                className={`p-4 rounded-xl border text-xs space-y-2.5 transition-all ${
                   diagnostic.status === 'success'
                     ? 'bg-emerald-950/20 border-emerald-800/40 text-emerald-200'
                     : 'bg-rose-950/20 border-rose-800/40 text-rose-200'
@@ -384,18 +426,26 @@ export default function AdminCurrency() {
                 </p>
 
                 {diagnostic.status === 'success' && (
-                  <div className="pt-2 border-t border-emerald-800/30 grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] text-slate-300">
+                  <div className="pt-2 border-t border-emerald-800/30 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-300">
                     <div>
                       <span className="text-slate-400 block text-[10px]">المزود المستجيب:</span>
-                      <strong className="text-white">{diagnostic.provider}</strong>
+                      <strong className="text-white text-xs">{diagnostic.provider}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px]">سعر الليرة السورية المستلم:</span>
+                      <strong className="text-amber-400 font-mono font-bold text-xs">
+                        {diagnostic.sypRate ? `1$ = ${diagnostic.sypRate.toLocaleString('ar-SY')} ل.س` : 'حسب التسعير اليدوي'}
+                      </strong>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px]">سعر الليرة التركية المستلم:</span>
-                      <strong className="text-emerald-400 font-mono font-bold">1 USD = {diagnostic.tryRate || tryRate} ₺</strong>
+                      <strong className="text-emerald-400 font-mono font-bold text-xs">
+                        {diagnostic.tryRate ? `1$ = ${diagnostic.tryRate} ₺` : 'غير متوفر'}
+                      </strong>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px]">عدد العملات المستلمة:</span>
-                      <strong className="text-cyan-400 font-mono font-bold">{diagnostic.ratesCount} عملة</strong>
+                      <strong className="text-cyan-400 font-mono font-bold text-xs">{diagnostic.ratesCount} عملة</strong>
                     </div>
                   </div>
                 )}
