@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   * {
@@ -38,7 +39,7 @@
   background: rgba(148, 163, 184, 0.6);
 }
 
-/* Ticker marquee animation */
+/* Ticker marquee animation left */
 @keyframes marquee-rtl {
   0% { transform: translateX(0%); }
   100% { transform: translateX(50%); }
@@ -51,6 +52,22 @@
 }
 
 .animate-marquee-rtl:hover {
+  animation-play-state: paused;
+}
+
+/* Continuous smooth slider moving to the right */
+@keyframes marquee-to-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0%); }
+}
+
+.animate-marquee-right {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee-to-right 35s linear infinite;
+}
+
+.animate-marquee-right:hover {
   animation-play-state: paused;
 }
 

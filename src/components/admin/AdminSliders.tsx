@@ -3,6 +3,7 @@ import { SliderImage } from '../../types';
 import { useStore } from '../../context/StoreContext';
 import { saveSlider, deleteSlider } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
+import ImageUploadField from './ImageUploadField';
 import { Plus, Edit2, Trash2, Image, X, ExternalLink } from 'lucide-react';
 
 export default function AdminSliders() {
@@ -198,16 +199,13 @@ export default function AdminSliders() {
                 />
               </div>
 
-              <div>
-                <label className="text-xs text-slate-300 font-bold block mb-1">رابط الصورة (Image URL)</label>
-                <input
-                  type="url"
-                  required
-                  value={form.image_url || ''}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none"
-                />
-              </div>
+              {/* Slider Image Upload */}
+              <ImageUploadField
+                label="صورة شريحة العرض (رفع من الجهاز أو رابط)"
+                required
+                value={form.image_url || ''}
+                onChange={(img) => setForm({ ...form, image_url: img })}
+              />
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

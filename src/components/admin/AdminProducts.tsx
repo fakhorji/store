@@ -3,6 +3,7 @@ import { Product, ProductPackage, ProductMode, ProductStatus } from '../../types
 import { useStore } from '../../context/StoreContext';
 import { saveProduct, deleteProduct } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
+import ImageUploadField from './ImageUploadField';
 import {
   Plus,
   Edit2,
@@ -368,15 +369,12 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs text-slate-300 font-bold block mb-1">رابط الصورة (Image URL)</label>
-                <input
-                  type="url"
-                  value={form.image_url || ''}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:border-amber-500 focus:outline-none"
-                />
-              </div>
+              {/* Product Image (Device Upload or URL) */}
+              <ImageUploadField
+                label="صورة المنتج (رفع من الجهاز أو رابط)"
+                value={form.image_url || ''}
+                onChange={(img) => setForm({ ...form, image_url: img })}
+              />
 
               <div>
                 <label className="text-xs text-slate-300 font-bold block mb-1">الوصف</label>

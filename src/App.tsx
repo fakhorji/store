@@ -1,25 +1,27 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ToastProvider } from './context/ToastContext';
 import { StoreProvider, useStore } from './context/StoreContext';
 import Header from './components/Header';
 import NewsTicker from './components/NewsTicker';
-import CurrencyRatesBar from './components/CurrencyRatesBar';
 import HeroSlider from './components/HeroSlider';
 import CategoryFilter from './components/CategoryFilter';
 import ProductCard from './components/ProductCard';
 import ProductDetailModal from './components/ProductDetailModal';
 import CartDrawer from './components/CartDrawer';
 import BottomNav from './components/BottomNav';
+import ContinuousAdSlider from './components/ContinuousAdSlider';
+import WorldCurrenciesWidget from './components/WorldCurrenciesWidget';
 import FAQSection from './components/FAQSection';
 import Footer from './components/Footer';
 import GlobalLoading from './components/GlobalLoading';
 import AdminPanel from './components/admin/AdminPanel';
+import AdminLoginModal from './components/admin/AdminLoginModal';
 import {
   Zap,
   ShieldCheck,
   Headphones,
-  Sparkles,
   ShoppingBag,
+  ChevronDown,
 } from 'lucide-react';
 
 function Storefront() {
@@ -33,10 +35,12 @@ function Storefront() {
     setSelectedProduct,
   } = useStore();
 
+  // 6 products display at first, then show more
+  const [visibleCount, setVisibleCount] = useState(6);
+
   // Filter products by category (including nested children) and search query
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      // Don't show hidden products in customer storefront
       if (product.status === 'hidden') return false;
 
       // Search query filter
@@ -51,17 +55,23 @@ function Storefront() {
       // Category filter
       if (activeCategory === 'all') return true;
 
-      // Check if activeCategory is this product's direct category
       if (product.category_id === activeCategory) return true;
 
-      // Check if activeCategory is a parent category of this product's category
       const childCategories = categories.filter((c) => c.parent_id === activeCategory);
-      const isChildOfActive = childCategories.some((c) => c.id === product.category_id);
-      if (isChildOfActive) return true;
-
-      return false;
+      return childCategories.some((c) => c.id === product.category_id);
     });
   }, [products, categories, activeCategory, searchQuery]);
+
+  // Paginated products slice
+  const displayedProducts = useMemo(() => {
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount]);
+
+  const hasMoreProducts = filteredProducts.length > visibleCount;
+
+  const handleShowMore = () => {
+    setVisibleCount((prev) => prev + 6);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200" dir="rtl">
@@ -70,9 +80,6 @@ function Storefront() {
 
       {/* Top News Ticker */}
       <NewsTicker />
-
-      {/* Currency Exchange Rates Bar */}
-      <CurrencyRatesBar />
 
       {/* Header */}
       <Header />
@@ -91,10 +98,10 @@ function Storefront() {
               </div>
               <div>
                 <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                  تسليم فوري وآلي
+                  تسليم سريع ومباشر عبر واتساب
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  شحن الشدات والأكواد مباشرة خلال 60 ثانية
+                  تنفيذ مباشر لطلبك عبر واتساب بعد تأكيد التحويل
                 </p>
               </div>
             </div>
@@ -132,9 +139,9 @@ function Storefront() {
         {/* Categories Nested Filter */}
         <CategoryFilter />
 
-        {/* Products Grid */}
+        {/* Products Grid (Max 6 at first) */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-          {filteredProducts.length === 0 ? (
+          {displayedProducts.length === 0 ? (
             <div className="py-16 text-center rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8">
               <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 text-slate-400">
                 <ShoppingBag className="w-8 h-8" />
@@ -147,13 +154,34 @@ function Storefront() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6">
+                {displayedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+
+              {/* Show More Products Button */}
+              {hasMoreProducts && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    onClick={handleShowMore}
+                    className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-slate-950 font-black text-xs sm:text-sm shadow-md transition-all active:scale-[0.98]"
+                  >
+                    <span>عرض المزيد من المنتجات ({filteredProducts.length - visibleCount} إضافية)</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
+
+        {/* Continuous Smooth Ad Slider (Moving to Right) */}
+        <ContinuousAdSlider />
+
+        {/* World Currencies Live Rates Widget */}
+        <WorldCurrenciesWidget />
 
         {/* FAQ Section */}
         <FAQSection />
@@ -171,7 +199,10 @@ function Storefront() {
       {/* Shopping Cart Drawer */}
       <CartDrawer />
 
-      {/* Admin Panel Dashboard */}
+      {/* Admin Login Modal (Accessible via direct link or query param) */}
+      <AdminLoginModal />
+
+      {/* Admin Panel Dashboard (Only for Authenticated Admin) */}
       <AdminPanel />
 
       {/* Mobile Bottom Navigation Bar */}

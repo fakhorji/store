@@ -64,6 +64,19 @@ CREATE TABLE IF NOT EXISTS slider_images (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 4.1 جدول سلايدر الإعلانات المستمر (Continuous Ad Banners)
+CREATE TABLE IF NOT EXISTS ad_banners (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  subtitle TEXT,
+  image_url TEXT NOT NULL,
+  badge TEXT,
+  link_url TEXT DEFAULT '#products-section',
+  sort_order INTEGER DEFAULT 1,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 5. جدول شريط الأخبار والتنبيهات (News Ticker)
 CREATE TABLE IF NOT EXISTS news_items (
   id TEXT PRIMARY KEY,
@@ -119,6 +132,7 @@ ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE packages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE slider_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ad_banners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE news_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE faqs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
@@ -129,6 +143,7 @@ CREATE POLICY "Public Read Categories" ON categories FOR SELECT USING (true);
 CREATE POLICY "Public Read Products" ON products FOR SELECT USING (true);
 CREATE POLICY "Public Read Packages" ON packages FOR SELECT USING (true);
 CREATE POLICY "Public Read Slider" ON slider_images FOR SELECT USING (true);
+CREATE POLICY "Public Read AdBanners" ON ad_banners FOR SELECT USING (true);
 CREATE POLICY "Public Read News" ON news_items FOR SELECT USING (true);
 CREATE POLICY "Public Read FAQs" ON faqs FOR SELECT USING (true);
 CREATE POLICY "Public Read Settings" ON settings FOR SELECT USING (true);
@@ -139,6 +154,7 @@ CREATE POLICY "Allow All Categories" ON categories FOR ALL USING (true) WITH CHE
 CREATE POLICY "Allow All Products" ON products FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Packages" ON packages FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Slider" ON slider_images FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow All AdBanners" ON ad_banners FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All News" ON news_items FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All FAQs" ON faqs FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow All Settings" ON settings FOR ALL USING (true) WITH CHECK (true);

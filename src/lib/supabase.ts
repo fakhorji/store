@@ -8,11 +8,13 @@ import {
   FAQItem,
   StoreSettings,
   CurrencySettings,
+  AdBanner,
 } from '../types';
 import {
   INITIAL_CATEGORIES,
   INITIAL_PRODUCTS,
   INITIAL_SLIDERS,
+  INITIAL_AD_BANNERS,
   INITIAL_NEWS,
   INITIAL_FAQS,
   INITIAL_SETTINGS,
@@ -28,6 +30,7 @@ const STORAGE_KEYS = {
   CATEGORIES: 'dz_store_categories',
   PRODUCTS: 'dz_store_products',
   SLIDERS: 'dz_store_sliders',
+  AD_BANNERS: 'dz_store_ad_banners',
   NEWS: 'dz_store_news',
   FAQS: 'dz_store_faqs',
   SETTINGS: 'dz_store_settings',
@@ -333,6 +336,57 @@ export async function deleteSlider(id: string): Promise<boolean> {
     await supabase.from('slider_images').delete().eq('id', id);
   } catch (e) {
     console.warn('Supabase slider delete error', e);
+  }
+  return true;
+}
+
+// -------------------------------------------------------------
+// Continuous Ad Banners (سلايدر الإعلانات المستمر)
+// -------------------------------------------------------------
+export async function getAdBanners(): Promise<AdBanner[]> {
+  try {
+    const { data, error } = await supabase
+      .from('ad_banners')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      setLocal(STORAGE_KEYS.AD_BANNERS, data);
+      return data;
+    }
+  } catch (err) {
+    console.warn('Supabase ad banners fetch error', err);
+  }
+  return getLocal<AdBanner[]>(STORAGE_KEYS.AD_BANNERS, INITIAL_AD_BANNERS);
+}
+
+export async function saveAdBanner(banner: AdBanner): Promise<AdBanner> {
+  const current = getLocal<AdBanner[]>(STORAGE_KEYS.AD_BANNERS, INITIAL_AD_BANNERS);
+  const idx = current.findIndex((b) => b.id === banner.id);
+  let updated: AdBanner[];
+  if (idx >= 0) {
+    updated = [...current];
+    updated[idx] = banner;
+  } else {
+    updated = [...current, banner];
+  }
+  setLocal(STORAGE_KEYS.AD_BANNERS, updated);
+
+  try {
+    await supabase.from('ad_banners').upsert([banner]);
+  } catch (e) {
+    console.warn('Supabase ad banner upsert error', e);
+  }
+  return banner;
+}
+
+export async function deleteAdBanner(id: string): Promise<boolean> {
+  const current = getLocal<AdBanner[]>(STORAGE_KEYS.AD_BANNERS, INITIAL_AD_BANNERS);
+  setLocal(STORAGE_KEYS.AD_BANNERS, current.filter((b) => b.id !== id));
+  try {
+    await supabase.from('ad_banners').delete().eq('id', id);
+  } catch (e) {
+    console.warn('Supabase ad banner delete error', e);
   }
   return true;
 }

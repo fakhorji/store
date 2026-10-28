@@ -15,6 +15,18 @@ export interface CurrencySettings {
   syp_rate: number;
   last_updated: string;
   auto_update_interval?: number; // minutes
+  api_endpoint?: string;
+  api_key?: string;
+}
+
+export interface WorldCurrencyRate {
+  code: string;
+  name: string;
+  nameAr: string;
+  symbol: string;
+  flag: string;
+  rate: number;
+  change24h?: number;
 }
 
 export interface Category {
@@ -56,7 +68,7 @@ export interface Product {
   image_url: string;
   status: ProductStatus;
   delivery_type: 'instant' | 'manual' | 'code';
-  delivery_time: string; // e.g. "تسليم فوري خلال دقيقة"
+  delivery_time: string; // e.g. "تسليم مباشر عبر واتساب بعد التحويل"
   badges?: string[];
   features?: string[];
   instructions?: string;
@@ -77,6 +89,17 @@ export interface SliderImage {
   tag?: string;
 }
 
+export interface AdBanner {
+  id: string;
+  title: string;
+  subtitle?: string;
+  image_url: string;
+  link_url?: string;
+  badge?: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
 export interface NewsItem {
   id: string;
   message: string;
@@ -95,6 +118,16 @@ export interface FAQItem {
   is_active: boolean;
 }
 
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  nameEn: string;
+  icon?: string;
+  description: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
 export interface StoreSettings {
   whatsapp_number: string;
   whatsapp_prefix: string;
@@ -107,6 +140,11 @@ export interface StoreSettings {
   support_email?: string;
   working_hours?: string;
   notice_text?: string;
+  admin_email?: string;
+  admin_password?: string;
+  currency_api_endpoint?: string;
+  currency_api_key?: string;
+  payment_methods?: PaymentMethod[];
 }
 
 export interface CartItem {

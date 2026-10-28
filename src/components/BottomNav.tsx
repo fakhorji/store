@@ -1,13 +1,15 @@
 import { useStore } from '../context/StoreContext';
-import { Home, Layers, ShoppingBag, Shield } from 'lucide-react';
+import { Home, Layers, ShoppingBag, Shield, MessageCircle, Flame } from 'lucide-react';
 
 export default function BottomNav() {
   const {
     totalCartCount,
     setIsCartOpen,
+    isAdminLoggedIn,
     isAdminOpen,
     setIsAdminOpen,
     setActiveCategory,
+    settings,
   } = useStore();
 
   const handleHome = () => {
@@ -16,6 +18,13 @@ export default function BottomNav() {
   };
 
   const handleCategories = () => {
+    const el = document.getElementById('products-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleOffers = () => {
     const el = document.getElementById('products-section');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
@@ -62,18 +71,30 @@ export default function BottomNav() {
           <span className="text-[10px] font-bold">السلة</span>
         </button>
 
-        {/* Admin / Profile */}
-        <button
-          onClick={() => setIsAdminOpen(!isAdminOpen)}
-          className={`flex flex-col items-center justify-center gap-1 active:scale-95 transition-all ${
-            isAdminOpen
-              ? 'text-amber-500'
-              : 'text-slate-600 dark:text-slate-400 hover:text-amber-500'
-          }`}
-        >
-          <Shield className="w-5 h-5" />
-          <span className="text-[10px] font-bold">الإدارة</span>
-        </button>
+        {/* 4th Tab: Admin (if logged in) OR Offers for regular visitors */}
+        {isAdminLoggedIn ? (
+          <button
+            onClick={() => setIsAdminOpen(!isAdminOpen)}
+            className={`flex flex-col items-center justify-center gap-1 active:scale-95 transition-all ${
+              isAdminOpen
+                ? 'text-amber-500'
+                : 'text-slate-600 dark:text-slate-400 hover:text-amber-500'
+            }`}
+          >
+            <Shield className="w-5 h-5 text-amber-500" />
+            <span className="text-[10px] font-bold">الإدارة</span>
+          </button>
+        ) : (
+          <a
+            href={`https://wa.me/${(settings.whatsapp_number || '905521234567').replace(/[^0-9]/g, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center justify-center gap-1 text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 active:scale-95 transition-all"
+          >
+            <MessageCircle className="w-5 h-5" />
+            <span className="text-[10px] font-bold">واتساب</span>
+          </a>
+        )}
       </div>
     </div>
   );

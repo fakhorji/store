@@ -6,15 +6,18 @@ import {
   Product,
   ProductPackage,
   SliderImage,
+  AdBanner,
   NewsItem,
   FAQItem,
   StoreSettings,
   CartItem,
+  PaymentMethod,
 } from '../types';
 import {
   getCategories,
   getProducts,
   getSliders,
+  getAdBanners,
   getNews,
   getFAQs,
   getStoreSettings,
@@ -23,6 +26,7 @@ import {
 } from '../lib/supabase';
 import { fetchLiveExchangeRates } from '../lib/currency';
 import { generateSingleWhatsAppCheckoutUrl, generateCartWhatsAppCheckoutUrl } from '../lib/whatsapp';
+import { INITIAL_PAYMENT_METHODS, INITIAL_AD_BANNERS } from '../data/mockData';
 import { useToast } from './ToastContext';
 
 interface StoreContextType {
@@ -32,12 +36,15 @@ interface StoreContextType {
   setCurrency: (currency: CurrencyCode) => void;
   currencySettings: CurrencySettings;
   setCurrencySettings: React.Dispatch<React.SetStateAction<CurrencySettings>>;
+  worldRates: Record<string, number>;
   categories: Category[];
   setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   sliders: SliderImage[];
   setSliders: React.Dispatch<React.SetStateAction<SliderImage[]>>;
+  adBanners: AdBanner[];
+  setAdBanners: React.Dispatch<React.SetStateAction<AdBanner[]>>;
   news: NewsItem[];
   setNews: React.Dispatch<React.SetStateAction<NewsItem[]>>;
   faqs: FAQItem[];
@@ -61,6 +68,11 @@ interface StoreContextType {
   setSearchQuery: (query: string) => void;
   isAdminOpen: boolean;
   setIsAdminOpen: (open: boolean) => void;
+  isAdminLoggedIn: boolean;
+  isAdminLoginModalOpen: boolean;
+  setIsAdminLoginModalOpen: (open: boolean) => void;
+  loginAdmin: (email: string, pass: string) => boolean;
+  logoutAdmin: () => void;
   isLoading: boolean;
   dbStatus: { connected: boolean; tablesExist: boolean; message: string };
   refreshData: () => Promise<void>;
@@ -96,7 +108,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      const root = document.documentElement;
+      if (next === 'dark') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+      localStorage.setItem('dz_theme', next);
+      return next;
+    });
   };
 
   // 2. Currency State
@@ -111,7 +133,49 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     showToast(`تم تغيير عملة العرض إلى: ${c === 'USD' ? 'الدولار الأمريكي ($)' : c === 'TRY' ? 'الليرة التركية (₺)' : 'الليرة السورية (ل.س)'}`, 'info');
   };
 
-  // 3. Database & App State
+  // 3. Admin Authentication State
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
+    return localStorage.getItem('dz_admin_session') === 'true';
+  });
+  const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+
+  // Check URL parameters on mount for admin portal link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === 'login' || params.get('admin') === 'portal' || params.get('admin') === 'true') {
+      if (localStorage.getItem('dz_admin_session') === 'true') {
+        setIsAdminOpen(true);
+      } else {
+        setIsAdminLoginModalOpen(true);
+      }
+    }
+  }, []);
+
+  const loginAdmin = (email: string, pass: string): boolean => {
+    const targetEmail = (settings.admin_email || 'admin@store.com').trim().toLowerCase();
+    const targetPass = (settings.admin_password || 'admin123456').trim();
+
+    if (email.trim().toLowerCase() === targetEmail && pass.trim() === targetPass) {
+      setIsAdminLoggedIn(true);
+      localStorage.setItem('dz_admin_session', 'true');
+      setIsAdminLoginModalOpen(false);
+      setIsAdminOpen(true);
+      showToast('أهلاً بك! تم تسجيل دخول المدير بنجاح 🛡️', 'success');
+      return true;
+    }
+    showToast('خطأ: البريد الإلكتروني أو كلمة المرور غير صحيحة', 'error');
+    return false;
+  };
+
+  const logoutAdmin = () => {
+    setIsAdminLoggedIn(false);
+    localStorage.removeItem('dz_admin_session');
+    setIsAdminOpen(false);
+    showToast('تم تسجيل الخروج من لوحة الإدارة', 'info');
+  };
+
+  // 4. Database & App State
   const [isLoading, setIsLoading] = useState(true);
   const [currencySettings, setCurrencySettings] = useState<CurrencySettings>({
     base_currency: 'USD',
@@ -119,17 +183,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try_rate: 34.25,
     syp_rate: 14800,
     last_updated: new Date().toISOString(),
+    api_endpoint: 'https://open.er-api.com/v6/latest/USD',
+    api_key: '',
   });
+  const [worldRates, setWorldRates] = useState<Record<string, number>>({});
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [sliders, setSliders] = useState<SliderImage[]>([]);
+  const [adBanners, setAdBanners] = useState<AdBanner[]>(INITIAL_AD_BANNERS);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
   const [settings, setSettings] = useState<StoreSettings>({
     whatsapp_number: '905521234567',
     whatsapp_prefix: 'مرحباً، أرغب في إتمام طلب المنتج الرقمي التالي:',
     store_name: 'ديجيتال زون',
-    store_tagline: 'المتجر الأول للمنتجات الرقمية والاشتراكات الفورية',
+    store_tagline: 'المتجر الأول للمنتجات الرقمية والاشتراكات مع الدفع والتسليم عبر واتساب',
+    admin_email: 'admin@store.com',
+    admin_password: 'admin123456',
+    payment_methods: INITIAL_PAYMENT_METHODS,
   });
 
   const [dbStatus, setDbStatus] = useState({
@@ -138,7 +210,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     message: 'جاري التحقق من الاتصال بقاعدة البيانات...',
   });
 
-  // 4. Cart State
+  // 5. Cart State
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem('dz_cart');
@@ -152,26 +224,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('dz_cart', JSON.stringify(cart));
   }, [cart]);
 
-  // 5. UI navigation & Modals
+  // 6. UI navigation & Modals
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // 6. Data Fetching
+  // 7. Data Fetching
   const refreshData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Test Supabase connection
       const status = await testSupabaseConnection();
       setDbStatus(status);
 
-      // Fetch all entities in parallel
-      const [cats, prods, slds, nws, fqList, sttngs, currRates] = await Promise.all([
+      const [cats, prods, slds, ads, nws, fqList, sttngs, currRates] = await Promise.all([
         getCategories(),
         getProducts(),
         getSliders(),
+        getAdBanners(),
         getNews(),
         getFAQs(),
         getStoreSettings(),
@@ -181,24 +251,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setCategories(cats);
       setProducts(prods);
       setSliders(slds);
+      setAdBanners(ads);
       setNews(nws);
       setFaqs(fqList);
       setSettings(sttngs);
       setCurrencySettings(currRates);
 
-      // If currency settings are in API mode, optionally update exchange rates
-      if (currRates.mode === 'api') {
-        fetchLiveExchangeRates().then((live) => {
-          if (live.success && live.tryRate) {
-            setCurrencySettings((prev) => ({
-              ...prev,
-              try_rate: live.tryRate || prev.try_rate,
-              syp_rate: live.sypRate || prev.syp_rate,
-              last_updated: new Date().toISOString(),
-            }));
+      // Fetch live exchange rates including world currencies
+      fetchLiveExchangeRates(currRates.api_endpoint || sttngs.currency_api_endpoint, currRates.api_key || sttngs.currency_api_key)
+        .then((live) => {
+          if (live.success && live.allRates) {
+            setWorldRates(live.allRates);
+            if (currRates.mode === 'api' && live.tryRate) {
+              setCurrencySettings((prev) => ({
+                ...prev,
+                try_rate: live.tryRate || prev.try_rate,
+                syp_rate: live.sypRate || prev.syp_rate,
+                last_updated: new Date().toISOString(),
+              }));
+            }
           }
-        });
-      }
+        })
+        .catch((e) => console.warn('World rates fetch error', e));
     } catch (err) {
       console.error('Error fetching store data', err);
     } finally {
@@ -210,7 +284,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     refreshData();
   }, [refreshData]);
 
-  // 7. Cart Actions
+  // 8. Cart Actions
   const addToCart = (product: Product, pkg?: ProductPackage, qty: number = 1) => {
     if (product.status === 'out_of_stock') {
       showToast('عذراً، هذا المنتج غير متوفر في المخزون حالياً', 'error');
@@ -280,7 +354,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const totalCartUsd = cart.reduce((acc, item) => acc + item.totalPriceUsd, 0);
 
-  // 8. WhatsApp Checkout Handlers
+  // 9. WhatsApp Checkout Handlers
   const checkoutSingleProduct = (
     product: Product,
     selectedPackage?: ProductPackage,
@@ -327,12 +401,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setCurrency,
         currencySettings,
         setCurrencySettings,
+        worldRates,
         categories,
         setCategories,
         products,
         setProducts,
         sliders,
         setSliders,
+        adBanners,
+        setAdBanners,
         news,
         setNews,
         faqs,
@@ -356,6 +433,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setSearchQuery,
         isAdminOpen,
         setIsAdminOpen,
+        isAdminLoggedIn,
+        isAdminLoginModalOpen,
+        setIsAdminLoginModalOpen,
+        loginAdmin,
+        logoutAdmin,
         isLoading,
         dbStatus,
         refreshData,

@@ -5,6 +5,7 @@ import AdminProducts from './AdminProducts';
 import AdminCategories from './AdminCategories';
 import AdminCurrency from './AdminCurrency';
 import AdminSliders from './AdminSliders';
+import AdminAdBanners from './AdminAdBanners';
 import AdminNews from './AdminNews';
 import AdminFAQs from './AdminFAQs';
 import AdminSettings from './AdminSettings';
@@ -15,11 +16,12 @@ import {
   Layers,
   DollarSign,
   Image,
+  Flame,
   Megaphone,
   HelpCircle,
   Settings,
   Store,
-  Sparkles,
+  LogOut,
 } from 'lucide-react';
 
 type AdminTab =
@@ -27,12 +29,21 @@ type AdminTab =
   | 'categories'
   | 'currency'
   | 'sliders'
+  | 'adbanners'
   | 'news'
   | 'faqs'
   | 'settings';
 
 export default function AdminPanel() {
-  const { isAdminOpen, setIsAdminOpen, products, categories, sliders } = useStore();
+  const {
+    isAdminOpen,
+    setIsAdminOpen,
+    products,
+    categories,
+    sliders,
+    adBanners,
+    logoutAdmin,
+  } = useStore();
   const [activeTab, setActiveTab] = useState<AdminTab>('products');
 
   if (!isAdminOpen) return null;
@@ -41,15 +52,16 @@ export default function AdminPanel() {
     { id: 'products', name: 'المنتجات والباقات', icon: Package, count: products.length },
     { id: 'categories', name: 'التصنيفات', icon: Layers, count: categories.length },
     { id: 'currency', name: 'أسعار العملات', icon: DollarSign },
-    { id: 'sliders', name: 'سلايدر العروض', icon: Image, count: sliders.length },
+    { id: 'sliders', name: 'سلايدر العروض الرئيسي', icon: Image, count: sliders.length },
+    { id: 'adbanners', name: 'سلايدر الإعلانات المستمر', icon: Flame, count: adBanners.length },
     { id: 'news', name: 'شريط الأخبار', icon: Megaphone },
     { id: 'faqs', name: 'الأسئلة الشائعة', icon: HelpCircle },
-    { id: 'settings', name: 'إعدادات المتجر و Supabase', icon: Settings },
+    { id: 'settings', name: 'إعدادات المتجر وطرق الدفع', icon: Settings },
   ];
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/80 backdrop-blur-md flex flex-col" dir="rtl">
+      <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/85 backdrop-blur-md flex flex-col" dir="rtl">
         {/* Admin Navigation Bar */}
         <div className="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 py-3 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -58,25 +70,35 @@ export default function AdminPanel() {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
-                <span>لوحة الإدارة والتحكم</span>
+                <span>لوحة تحكم المتجر</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  Admin Panel
+                  Admin Portal
                 </span>
               </h2>
               <span className="text-[11px] text-slate-400">
-                إدارة الكتالوج، أسعار الصرف، الباقات، والإعدادات
+                إدارة المنتجات، الباقات، الإعلانات، وطرق الدفع
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setIsAdminOpen(false)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors border border-slate-700"
             >
               <Store className="w-4 h-4 text-amber-400" />
-              <span>العودة للمتجر</span>
+              <span>معاينة المتجر</span>
             </button>
+
+            <button
+              onClick={logoutAdmin}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-900/30 hover:bg-rose-900/50 text-rose-300 text-xs font-bold transition-colors border border-rose-800/40"
+              title="تسجيل الخروج"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">تسجيل خروج</span>
+            </button>
+
             <button
               onClick={() => setIsAdminOpen(false)}
               className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-colors"
@@ -132,6 +154,7 @@ export default function AdminPanel() {
               {activeTab === 'categories' && <AdminCategories />}
               {activeTab === 'currency' && <AdminCurrency />}
               {activeTab === 'sliders' && <AdminSliders />}
+              {activeTab === 'adbanners' && <AdminAdBanners />}
               {activeTab === 'news' && <AdminNews />}
               {activeTab === 'faqs' && <AdminFAQs />}
               {activeTab === 'settings' && <AdminSettings />}

@@ -1,4 +1,4 @@
-import { CurrencyCode, CurrencySettings } from '../types';
+import { CurrencyCode, CurrencySettings, WorldCurrencyRate } from '../types';
 
 export const CURRENCIES_CONFIG: Record<
   CurrencyCode,
@@ -23,6 +23,25 @@ export const CURRENCIES_CONFIG: Record<
     decimals: 0,
   },
 };
+
+export const MAJOR_WORLD_CURRENCIES: Omit<WorldCurrencyRate, 'rate' | 'change24h'>[] = [
+  { code: 'SAR', name: 'Saudi Riyal', nameAr: 'ريال سعودي', symbol: 'ر.س', flag: '🇸🇦' },
+  { code: 'AED', name: 'UAE Dirham', nameAr: 'درهم إماراتي', symbol: 'د.إ', flag: '🇦🇪' },
+  { code: 'KWD', name: 'Kuwaiti Dinar', nameAr: 'دينار كويتي', symbol: 'د.ك', flag: '🇰🇼' },
+  { code: 'QAR', name: 'Qatari Riyal', nameAr: 'ريال قطري', symbol: 'ر.ق', flag: '🇶🇦' },
+  { code: 'EGP', name: 'Egyptian Pound', nameAr: 'جنيه مصري', symbol: 'ج.م', flag: '🇪🇬' },
+  { code: 'JOD', name: 'Jordanian Dinar', nameAr: 'دينار أردني', symbol: 'د.أ', flag: '🇯🇴' },
+  { code: 'TRY', name: 'Turkish Lira', nameAr: 'ليرة تركية', symbol: '₺', flag: '🇹🇷' },
+  { code: 'EUR', name: 'Euro', nameAr: 'يورو أوروبي', symbol: '€', flag: '🇪🇺' },
+  { code: 'GBP', name: 'British Pound', nameAr: 'جنيه إسترليني', symbol: '£', flag: '🇬🇧' },
+  { code: 'CAD', name: 'Canadian Dollar', nameAr: 'دولار كندي', symbol: 'C$', flag: '🇨🇦' },
+  { code: 'AUD', name: 'Australian Dollar', nameAr: 'دولار أسترالي', symbol: 'A$', flag: '🇦🇺' },
+  { code: 'BHD', name: 'Bahraini Dinar', nameAr: 'دينار بحريني', symbol: 'د.ب', flag: '🇧🇭' },
+  { code: 'OMR', name: 'Omani Rial', nameAr: 'ريال عماني', symbol: 'ر.ع', flag: '🇴🇲' },
+  { code: 'IQD', name: 'Iraqi Dinar', nameAr: 'دينار عراقي', symbol: 'د.ع', flag: '🇮🇶' },
+  { code: 'JPY', name: 'Japanese Yen', nameAr: 'ين ياباني', symbol: '¥', flag: '🇯🇵' },
+  { code: 'SYP', name: 'Syrian Pound', nameAr: 'ليرة سورية', symbol: 'ل.س', flag: '🇸🇾' },
+];
 
 /**
  * Convert a base USD price to the target currency
@@ -50,7 +69,6 @@ export function formatCurrencyPrice(
   const config = CURRENCIES_CONFIG[targetCurrency] || CURRENCIES_CONFIG.USD;
 
   if (targetCurrency === 'SYP') {
-    // Round to nearest 100 or integer for Syrian Pound
     const rounded = Math.round(converted);
     const formattedNum = new Intl.NumberFormat('ar-SY').format(rounded);
     return `${formattedNum} ${config.symbol}`;
@@ -65,26 +83,37 @@ export function formatCurrencyPrice(
 }
 
 /**
- * Fetch live exchange rates from public API (USD to TRY, etc.)
+ * Fetch live exchange rates from configured or public API (USD to TRY, etc.)
  */
-export async function fetchLiveExchangeRates(): Promise<{
+export async function fetchLiveExchangeRates(customEndpoint?: string, apiKey?: string): Promise<{
   tryRate?: number;
   sypRate?: number;
+  allRates?: Record<string, number>;
   success: boolean;
   source: string;
 }> {
   try {
-    const res = await fetch('https://open.er-api.com/v6/latest/USD');
+    let url = customEndpoint && customEndpoint.trim() ? customEndpoint.trim() : 'https://open.er-api.com/v6/latest/USD';
+    if (apiKey && apiKey.trim()) {
+      if (url.includes('?')) {
+        url += `&apikey=${encodeURIComponent(apiKey.trim())}`;
+      } else {
+        url += `?apikey=${encodeURIComponent(apiKey.trim())}`;
+      }
+    }
+    const res = await fetch(url);
     if (!res.ok) throw new Error('فشل جلب أسعار الصرف من الخادم');
     const data = await res.json();
-    if (data && data.rates) {
-      const tryRate = data.rates.TRY ? Number(data.rates.TRY.toFixed(2)) : undefined;
-      const sypRate = data.rates.SYP ? Number(data.rates.SYP.toFixed(0)) : undefined;
+    const rates = data.rates || data.conversion_rates;
+    if (rates) {
+      const tryRate = rates.TRY ? Number(Number(rates.TRY).toFixed(2)) : undefined;
+      const sypRate = rates.SYP ? Number(Number(rates.SYP).toFixed(0)) : undefined;
       return {
         tryRate,
         sypRate,
+        allRates: rates,
         success: true,
-        source: 'Open Exchange Rates API',
+        source: customEndpoint ? 'Custom Currency API' : 'Open Exchange Rates API',
       };
     }
     throw new Error('بيانات الأسعار غير متوفرة في الاستجابة');

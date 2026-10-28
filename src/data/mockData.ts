@@ -1,4 +1,4 @@
-import { Category, Product, SliderImage, NewsItem, FAQItem, StoreSettings, CurrencySettings } from '../types';
+import { Category, Product, SliderImage, AdBanner, NewsItem, FAQItem, StoreSettings, CurrencySettings, PaymentMethod } from '../types';
 
 export const INITIAL_CURRENCY_SETTINGS: CurrencySettings = {
   base_currency: 'USD',
@@ -7,11 +7,70 @@ export const INITIAL_CURRENCY_SETTINGS: CurrencySettings = {
   syp_rate: 14800,
   last_updated: new Date().toISOString(),
   auto_update_interval: 60,
+  api_endpoint: 'https://open.er-api.com/v6/latest/USD',
+  api_key: '',
 };
+
+export const INITIAL_PAYMENT_METHODS: PaymentMethod[] = [
+  {
+    id: 'pm-sham',
+    name: 'شام كاش (Sham Cash)',
+    nameEn: 'Sham Cash',
+    icon: 'Wallet',
+    description: 'تحويل فوري عبر رقم الحساب داخل سوريا بدون عمولة',
+    is_active: true,
+    sort_order: 1,
+  },
+  {
+    id: 'pm-zain',
+    name: 'زين كاش (Zain Cash)',
+    nameEn: 'Zain Cash',
+    icon: 'Smartphone',
+    description: 'دفع مباشر عبر محفظة زين كاش لعملاء العراق',
+    is_active: true,
+    sort_order: 2,
+  },
+  {
+    id: 'pm-papara',
+    name: 'باربارا (Papara / IBAN)',
+    nameEn: 'Papara',
+    icon: 'CreditCard',
+    description: 'تحويل فوري في تركيا عبر حساب باربارا أو الآيبان البنكي',
+    is_active: true,
+    sort_order: 3,
+  },
+  {
+    id: 'pm-usdt',
+    name: 'USDT (TRC20 / BEP20)',
+    nameEn: 'USDT Crypto',
+    icon: 'Coins',
+    description: 'دفع بالعملات الرقمية المشفرة لجميع دول العالم',
+    is_active: true,
+    sort_order: 4,
+  },
+  {
+    id: 'pm-syriatel',
+    name: 'سيريتل كاش (Syriatel Cash)',
+    nameEn: 'Syriatel Cash',
+    icon: 'PhoneCall',
+    description: 'دفع عبر خدمة سيريتل كاش لعملاء سوريا',
+    is_active: true,
+    sort_order: 5,
+  },
+  {
+    id: 'pm-bank',
+    name: 'حوالات الهرم والفؤاد',
+    nameEn: 'Haram / Fouad',
+    icon: 'Landmark',
+    description: 'إرسال حوالة مالية بالليرة السورية أو الدولار',
+    is_active: true,
+    sort_order: 6,
+  },
+];
 
 export const INITIAL_SETTINGS: StoreSettings = {
   store_name: 'ديجيتال زون | DigitalZone',
-  store_tagline: 'المتجر الأول للبطاقات والاشتراكات والمنتجات الرقمية الفورية',
+  store_tagline: 'المتجر الأول للبطاقات والاشتراكات والمنتجات الرقمية مع الدفع والتسليم عبر واتساب',
   whatsapp_number: '905521234567',
   whatsapp_prefix: 'مرحباً ديجيتال زون! أرغب في إتمام طلب المنتج الرقمي التالي:',
   logo_url: '',
@@ -19,8 +78,13 @@ export const INITIAL_SETTINGS: StoreSettings = {
   instagram_url: 'https://instagram.com/digitalzone_ar',
   facebook_url: 'https://facebook.com/digitalzone.arabic',
   support_email: 'support@digitalzone.com',
-  working_hours: 'خدمة العملاء متوفرة 24/7 - تسليم فوري للمنتجات',
+  working_hours: 'خدمة العملاء متوفرة 24/7 - تسليم سريع عبر واتساب بعد التحويل',
   notice_text: 'جميع منتجاتنا رسمية 100% ومضمونة مع دعم فني متواصل عبر واتساب',
+  admin_email: 'admin@store.com',
+  admin_password: 'admin123456',
+  currency_api_endpoint: 'https://open.er-api.com/v6/latest/USD',
+  currency_api_key: '',
+  payment_methods: INITIAL_PAYMENT_METHODS,
 };
 
 export const INITIAL_CATEGORIES: Category[] = [
@@ -39,7 +103,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'شدات ببجي موبايل',
     slug: 'pubg-mobile',
     icon: 'Crosshair',
-    description: 'شحن شدات UC ببجي عبر الآيدي ID الرسمي فوري',
+    description: 'شحن شدات UC ببجي عبر الآيدي ID الرسمي عبر واتساب',
     parent_id: 'cat-gaming',
     sort_order: 1,
     is_active: true,
@@ -99,18 +163,18 @@ export const INITIAL_CATEGORIES: Category[] = [
 export const INITIAL_PRODUCTS: Product[] = [
   {
     id: 'prod-pubg-uc',
-    name: 'شدات ببجي موبايل (PUBG UC) - شحن فوري بالـ ID',
+    name: 'شدات ببجي موبايل (PUBG UC) - شحن مباشر بالـ ID',
     slug: 'pubg-mobile-uc',
     category_id: 'cat-pubg',
     category_name: 'شدات ببجي موبايل',
     mode: 'packages',
     base_price_usd: 0.99,
-    description: 'شحن شدات ببجي موبايل العالمية رسمياً وفورياً عن طريق معرف اللاعب (Player ID). يصل الشحن إلى حسابك داخل اللعبة خلال أقل من دقيقة بعد التحقق من الدفع.',
+    description: 'شحن شدات ببجي موبايل العالمية رسمياً ومباشرة عن طريق معرف اللاعب (Player ID). يتم تنفيذ الطلب والتسليم عبر محادثة واتساب فور تأكيد التحويل.',
     image_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
     status: 'active',
     delivery_type: 'instant',
-    delivery_time: 'تسليم فوري عبر الـ ID خلال 60 ثانية',
-    badges: ['الأكثر مبيعاً 🔥', 'تسليم آلي فوري'],
+    delivery_time: 'تسليم سريع ومباشر عبر واتساب',
+    badges: ['الأكثر مبيعاً 🔥', 'تسليم مباشر'],
     features: [
       'شحن رسمي معتمد 100%',
       'لا نحتاج كلمة المرور، فقط الـ Player ID',
@@ -135,11 +199,11 @@ export const INITIAL_PRODUCTS: Product[] = [
     category_name: 'بطاقات المتاجر (ستور)',
     mode: 'packages',
     base_price_usd: 10.50,
-    description: 'بطاقات تعبئة رصيد متجر بلايستيشن للأجهزة PS4 و PS5. كود رقمي أصلي لشراء الألعاب والإضافات واشتراكات PS Plus.',
+    description: 'بطاقات تعبئة رصيد متجر بلايستيشن للأجهزة PS4 و PS5. كود رقمي أصلي لشراء الألعاب والإضافات واشتراكات PS Plus مع إرسال الكود في واتساب.',
     image_url: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=800&q=80',
     status: 'active',
     delivery_type: 'code',
-    delivery_time: 'إرسال الكود فوراً عبر واتساب',
+    delivery_time: 'إرسال الكود عبر واتساب بعد التحويل',
     badges: ['كود رقمي أصلي', 'ريجون أمريكي / سعودي'],
     features: [
       'كود رسمي صالح للاستخدام فوراً',
@@ -166,7 +230,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
     status: 'active',
     delivery_type: 'instant',
-    delivery_time: 'تفعيل خلال 5 دقائق',
+    delivery_time: 'تفعيل سريع عبر واتساب خلال دقائق',
     badges: ['على إيميلك الشخصي', 'ضمان كامل المدة'],
     features: [
       'وصول كامل لمكتبة التصاميم والصور والفيديوهات المميزة',
@@ -194,13 +258,13 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80',
     status: 'active',
     delivery_type: 'instant',
-    delivery_time: 'تسليم بيانات الحساب خلال دقيقتين',
+    delivery_time: 'تسليم بيانات الحساب عبر واتساب مباشرة',
     badges: ['حساب خاص', 'ضمان 30 يوم'],
     features: [
       'وصول غير محدود وسريع لنماذج الذكاء الاصطناعي الذكية',
       'إنشاء وتخصيص وكلاء GPTs مخصصة',
       'تحليل الصور والمستندات والبرمجة باحترافية',
-      'تسليم فوري للبريد وكلمة المرور الخاصة بالحساب',
+      'تسليم فوري للبريد وكلمة المرور الخاصة بالحساب في واتساب',
     ],
   },
   {
@@ -215,7 +279,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?auto=format&fit=crop&w=800&q=80',
     status: 'active',
     delivery_type: 'instant',
-    delivery_time: 'إهداء مباشر لمعرف اليوزر @username خلال دقائق',
+    delivery_time: 'إهداء مباشر لمعرف اليوزر @username عبر واتساب',
     badges: ['إهداء رسمي Gift', 'بدون تسجيل دخول'],
     features: [
       'بدون طلب كلمة المرور - إهداء عبر اليوزر نيم فقط',
@@ -223,7 +287,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       'رفع ملفات ضخمة بحجم يصل لـ 4 غيغابايت',
       'نجمة البريميوم بجانب اسمك ورموز تعبيرية متحركة حصرية',
     ],
-    instructions: 'أرسل لنا اسم المستخدم الخاص بك على تيليجرام (مثل @username).',
+    instructions: 'أرسل لنا اسم المستخدم الخاص بك على تيليجرام (مثل @username) في رسالة الواتساب.',
     packages: [
       { id: 'pkg-tg-3m', name: 'اشتراك 3 أشهر', base_price_usd: 11.00, quantity_label: '3 أشهر', sort_order: 1, is_available: true },
       { id: 'pkg-tg-6m', name: 'اشتراك 6 أشهر', base_price_usd: 18.50, quantity_label: '6 أشهر', sort_order: 2, badge: 'توفير', is_available: true },
@@ -242,7 +306,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=800&q=80',
     status: 'active',
     delivery_type: 'code',
-    delivery_time: 'تسليم فوري للكود والتعليمات',
+    delivery_time: 'تسليم سريع للكود والتعليمات في واتساب',
     badges: ['تفعيل أصلي مدى الحياة', 'تحديثات مايكروسوفت'],
     features: [
       'مفتاح Retail أصلي يرتبط باللوحة الأم مدى الحياة',
@@ -263,8 +327,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
     status: 'active',
     delivery_type: 'code',
-    delivery_time: 'إرسال الكود خلال دقائق',
-    badges: ['كود عالمي Global', 'تعبئة فورية'],
+    delivery_time: 'إرسال الكود عبر واتساب بعد التحويل',
+    badges: ['كود عالمي Global', 'تعبئة موثوقة'],
     features: [
       'كود رسمي يقبل التعبئة على كافة حسابات ستيم',
       'استخدم الرصيد في عروض وتخفيضات ستيم الموسمية',
@@ -288,7 +352,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     image_url: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&w=800&q=80',
     status: 'out_of_stock',
     delivery_type: 'instant',
-    delivery_time: 'التسليم الفوري متوقف مؤقتاً',
+    delivery_time: 'التسليم متوقف مؤقتاً',
     badges: ['نفد مؤقتاً', 'جودة 4K UHD'],
     features: [
       'ملف شخصي خاص محمي برمز PIN',
@@ -306,7 +370,7 @@ export const INITIAL_SLIDERS: SliderImage[] = [
   {
     id: 'slide-1',
     title: 'شحن شدات ببجي بأرخص الأسعار الرسمية',
-    subtitle: 'تسليم فوري مباشر للآيدي ID الخاص بك خلال ثوانٍ معدودة وبدون كلمة مرور',
+    subtitle: 'تسليم سريع ومباشر للآيدي ID الخاص بك بعد إتمام الطلب عبر واتساب وبدون الحاجة لكلمة المرور',
     image_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1600&q=85',
     button_text: 'اشحن الآن عبر واتساب',
     link_url: '#products',
@@ -317,18 +381,18 @@ export const INITIAL_SLIDERS: SliderImage[] = [
   {
     id: 'slide-2',
     title: 'اشتراكات كانفا برو والذكاء الاصطناعي',
-    subtitle: 'أطلق العنان لإبداعك مع حسابات رسمية ومضمونة كامل المدة بأسعار رمزية',
+    subtitle: 'أطلق العنان لإبداعك مع حسابات رسمية ومضمونة كامل المدة بأسعار رمزية مع تفعيل فوري عبر واتساب',
     image_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=85',
     button_text: 'تصفح باقات الذكاء الاصطناعي',
     link_url: '#products',
     sort_order: 2,
     is_active: true,
-    tag: 'تفعيل فوري على إيميلك ⭐',
+    tag: 'تفعيل سريع على إيميلك ⭐',
   },
   {
     id: 'slide-3',
     title: 'بطاقات الهدايا والمتاجر العالمية',
-    subtitle: 'بلايستيشن، إكس بوكس، آيتونز، وستيم بأكواد رقمية أصلية موثوقة 100%',
+    subtitle: 'بلايستيشن، إكس بوكس، آيتونز، وستيم بأكواد رقمية أصلية موثوقة 100% وتسليم فوري عبر واتساب',
     image_url: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=1600&q=85',
     button_text: 'استكشف بطاقات الألعاب',
     link_url: '#products',
@@ -338,16 +402,70 @@ export const INITIAL_SLIDERS: SliderImage[] = [
   },
 ];
 
+// Continuous Smooth Infinite Promo Slider Banners (اسفل المنتجات)
+export const INITIAL_AD_BANNERS: AdBanner[] = [
+  {
+    id: 'ad-1',
+    title: 'عروض شحن ببجي موبايل',
+    subtitle: 'خصم 20% إضافي عند طلب رويال باس المزدوج عبر واتساب',
+    image_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80',
+    badge: 'عرض خاص 🔥',
+    sort_order: 1,
+    is_active: true,
+    link_url: '#products-section',
+  },
+  {
+    id: 'ad-2',
+    title: 'اشتراكات كانفا برو السنوية',
+    subtitle: 'وفر حتى 60% مع اشتراكات كانفا برو الأصلية مدى الحياة',
+    image_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80',
+    badge: 'توفير مذهل ⭐',
+    sort_order: 2,
+    is_active: true,
+    link_url: '#products-section',
+  },
+  {
+    id: 'ad-3',
+    title: 'بطاقات بلايستيشن وألعاب الكمبيوتر',
+    subtitle: 'أكواد أمريكية وسعودية جاهزة للإرسال الفوري بعد التحويل',
+    image_url: 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=600&q=80',
+    badge: 'تسليم فوري 🎮',
+    sort_order: 3,
+    is_active: true,
+    link_url: '#products-section',
+  },
+  {
+    id: 'ad-4',
+    title: 'تراخيص مايكروسوفت الأصلية',
+    subtitle: 'ويندوز 11 برو وأوفيس أصلي مع ضمان التنشيط مدى الحياة',
+    image_url: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80',
+    badge: 'ضمان دائم ⚡',
+    sort_order: 4,
+    is_active: true,
+    link_url: '#products-section',
+  },
+  {
+    id: 'ad-5',
+    title: 'اشتراكات تيليجرام بريميوم',
+    subtitle: 'ترقية فورية عبر إهداء المعرف بدون كلمة مرور خلال دقائق',
+    image_url: 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?auto=format&fit=crop&w=600&q=80',
+    badge: 'بدون كلمة سر 💎',
+    sort_order: 5,
+    is_active: true,
+    link_url: '#products-section',
+  },
+];
+
 export const INITIAL_NEWS: NewsItem[] = [
   {
     id: 'news-1',
-    message: '⚡ عروض نهاية الأسبوع: خصومات حصرية تصل حتى 30% على شدات ببجي وبطاقات بلايستيشن ستور!',
+    message: '⚡ عروض خاصة: خصومات حصرية على شدات ببجي وبطاقات بلايستيشن ستور عبر واتساب!',
     type: 'promo',
     is_active: true,
   },
   {
     id: 'news-2',
-    message: '🚀 تم تفعيل الشحن المباشر الآلي لاشتراكات تيليجرام بريميوم وكانفا برو خلال دقائق عبر واتساب.',
+    message: '🚀 يتم تسليم كافة الطلبات وتفعيل الحسابات سريعاً ومباشرة بعد التحويل البنكي أو المحفظة الإلكترونية.',
     type: 'info',
     is_active: true,
   },
@@ -363,7 +481,7 @@ export const INITIAL_FAQS: FAQItem[] = [
   {
     id: 'faq-1',
     question: 'كيف تتم عملية الشراء والدفع عبر المتجر؟',
-    answer: 'اختر المنتج أو الباقة المطلوبة واضغط على "اطلب عبر واتساب". سيتم نقلك تلقائياً لتطبيق واتساب مع تفاصيل طلبك بدقة، وسيقوم فريق الدعم الفني بالرد الفوري لتأكيد وسيلة الدفع المناسبة لك (شام كاش، زين كاش، باربارا، تحويل بنكي، USDT، أو باي بال) وإرسال طلبك فوراً.',
+    answer: 'اختر المنتج أو الباقة المطلوبة واضغط على "اطلب عبر واتساب". سيتم نقلك تلقائياً لتطبيق واتساب مع تفاصيل طلبك بدقة، وسيقوم فريق الدعم الفني بالرد الفوري لتأكيد وسيلة الدفع المناسبة لك (شام كاش، زين كاش، سيريتل كاش، باربارا، تحويل بنكي، USDT، أو باي بال) وإرسال طلبك فوراً بعد التحويل.',
     category: 'الشراء والدفع',
     sort_order: 1,
     is_active: true,
@@ -371,7 +489,7 @@ export const INITIAL_FAQS: FAQItem[] = [
   {
     id: 'faq-2',
     question: 'كم يستغرق استلام الكود أو تفعيل الاشتراك؟',
-    answer: 'معظم منتجاتنا ذات تسليم فوري! بالنسبة لشدات ببجي والأكواد الرقمية يتم التسليم خلال 1 إلى 5 دقائق من تأكيد التحويل. وبالنسبة لتفعيل اشتراكات الإيميل (مثل كانفا) يتم التفعيل خلال أقل من 10 دقائق.',
+    answer: 'يتم التسليم سريعاً ومباشرة فور التحويل! بالنسبة لشدات ببجي والأكواد الرقمية يتم التسليم عادةً خلال 1 إلى 5 دقائق من تأكيد التحويل. وبالنسبة لتفعيل اشتراكات الإيميل (مثل كانفا) يتم التفعيل خلال أقل من 10 دقائق.',
     category: 'التسليم',
     sort_order: 2,
     is_active: true,
