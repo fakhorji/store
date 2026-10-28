@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { saveCurrencySettings } from '../../lib/supabase';
+import { saveCurrencySettings, saveStoreSettings } from '../../lib/supabase';
 import { fetchLiveExchangeRates } from '../../lib/currency';
 import SyrianNewFlag from '../icons/SyrianNewFlag';
 import { useToast } from '../../context/ToastContext';
@@ -11,17 +11,24 @@ import {
   RefreshCw,
   Calculator,
   Save,
-  CheckCircle2,
+  Globe2,
 } from 'lucide-react';
 
 export default function AdminCurrency() {
-  const { currencySettings, setCurrencySettings } = useStore();
+  const { currencySettings, setCurrencySettings, settings, setSettings } = useStore();
   const { showToast } = useToast();
 
   const [mode, setMode] = useState<'api' | 'manual'>(currencySettings.mode);
   const [tryRate, setTryRate] = useState<number>(currencySettings.try_rate);
   const [sypRate, setSypRate] = useState<number>(currencySettings.syp_rate);
+  const [apiEndpoint, setApiEndpoint] = useState<string>(
+    currencySettings.api_endpoint || settings.currency_api_endpoint || 'https://open.er-api.com/v6/latest/USD'
+  );
+  const [apiKey, setApiKey] = useState<string>(
+    currencySettings.api_key || settings.currency_api_key || ''
+  );
   const [isFetchingApi, setIsFetchingApi] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Live test calculator state
   const [testUsdAmount, setTestUsdAmount] = useState<number>(10);
@@ -29,13 +36,13 @@ export default function AdminCurrency() {
   const handleFetchApiRates = async () => {
     setIsFetchingApi(true);
     try {
-      const res = await fetchLiveExchangeRates();
+      const res = await fetchLiveExchangeRates(apiEndpoint, apiKey);
       if (res.success && res.tryRate) {
         setTryRate(res.tryRate);
         if (res.sypRate) setSypRate(res.sypRate);
         showToast(`تم جلب سعر الصرف الحي بنجاح: 1$ = ${res.tryRate} ₺`, 'success');
       } else {
-        showToast('تعذر الاتصال بخدمة أسعار الصرف الحية', 'error');
+        showToast('تعذر الاتصال بخدمة أسعار الصرف الحية، تأكد من صحة الرابط', 'error');
       }
     } catch {
       showToast('خطأ أثناء جلب أسعار الصرف', 'error');
@@ -45,17 +52,39 @@ export default function AdminCurrency() {
   };
 
   const handleSaveSettings = async () => {
-    const updated = {
+    setIsSaving(true);
+    const updatedCurrency = {
       base_currency: 'USD' as const,
       mode,
       try_rate: Number(tryRate),
       syp_rate: Number(sypRate),
+      api_endpoint: apiEndpoint.trim(),
+      api_key: apiKey.trim(),
       last_updated: new Date().toISOString(),
     };
 
-    await saveCurrencySettings(updated);
-    setCurrencySettings(updated);
-    showToast('تم حفظ إعدادات أسعار الصرف ومزامنتها بنجاح!', 'success');
+    const updatedSettings = {
+      ...settings,
+      currency_api_endpoint: apiEndpoint.trim(),
+      currency_api_key: apiKey.trim(),
+    };
+
+    // 1. Instant local update (0ms delay for user)
+    setCurrencySettings(updatedCurrency);
+    setSettings(updatedSettings);
+    showToast('تم حفظ وتطبيق إعدادات العملات وربط الـ API فوراً! ⚡', 'success');
+
+    // 2. Fast background database sync
+    try {
+      await Promise.all([
+        saveCurrencySettings(updatedCurrency),
+        saveStoreSettings(updatedSettings),
+      ]);
+    } catch (e) {
+      console.error('Supabase currency save error', e);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -120,6 +149,44 @@ export default function AdminCurrency() {
             </div>
           </button>
         </div>
+
+        {/* API Endpoint & Key Configuration when API Mode is selected */}
+        {mode === 'api' && (
+          <div className="pt-3 border-t border-slate-800/80 space-y-3">
+            <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+              <Globe2 className="w-3.5 h-3.5" />
+              <span>إعدادات مزود الـ API للأسعار الحية (Live Currency API):</span>
+            </span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                  رابط نقطة النهاية (Endpoint URL)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://open.er-api.com/v6/latest/USD"
+                  value={apiEndpoint}
+                  onChange={(e) => setApiEndpoint(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                  مفتاح API Key (اختياري)
+                </label>
+                <input
+                  type="text"
+                  placeholder="اتركه فارغاً إذا كان مجانياً"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Exchange Rates Form */}
@@ -136,7 +203,7 @@ export default function AdminCurrency() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-sm transition-all"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isFetchingApi ? 'animate-spin' : ''}`} />
-              <span>جلب أحدث سعر الآن عبر API</span>
+              <span>جلب وتحديث السعر الآن عبر API</span>
             </button>
           )}
         </div>
@@ -194,10 +261,11 @@ export default function AdminCurrency() {
         <button
           type="button"
           onClick={handleSaveSettings}
-          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all"
+          disabled={isSaving}
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          <span>حفظ وتطبيق أسعار الصرف على كامل المتجر فوراً</span>
+          <span>{isSaving ? 'جاري الحفظ والتطبيق...' : 'حفظ وتطبيق أسعار الصرف على كامل المتجر فوراً'}</span>
         </button>
       </div>
 

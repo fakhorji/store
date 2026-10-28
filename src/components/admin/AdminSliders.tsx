@@ -4,6 +4,7 @@ import { useStore } from '../../context/StoreContext';
 import { saveSlider, deleteSlider } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
 import ImageUploadField from './ImageUploadField';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { Plus, Edit2, Trash2, Image, X, ExternalLink } from 'lucide-react';
 
 export default function AdminSliders() {
@@ -12,6 +13,18 @@ export default function AdminSliders() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<SliderImage | null>(null);
+
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    sliderId: string;
+    sliderTitle: string;
+  }>({
+    isOpen: false,
+    sliderId: '',
+    sliderTitle: '',
+  });
+
   const [form, setForm] = useState<Partial<SliderImage>>({
     title: '',
     subtitle: '',
@@ -45,12 +58,20 @@ export default function AdminSliders() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذه الشريحة؟')) {
-      await deleteSlider(id);
-      setSliders((prev) => prev.filter((s) => s.id !== id));
-      showToast('تم حذف شريحة السلايدر', 'info');
-    }
+  const handleDelete = (id: string, title: string) => {
+    setDeleteModal({
+      isOpen: true,
+      sliderId: id,
+      sliderTitle: title,
+    });
+  };
+
+  const confirmDeleteSlider = () => {
+    const id = deleteModal.sliderId;
+    setSliders((prev) => prev.filter((s) => s.id !== id));
+    setDeleteModal({ isOpen: false, sliderId: '', sliderTitle: '' });
+    showToast('تم حذف شريحة السلايدر', 'info');
+    deleteSlider(id).catch((err) => console.error('Delete slider error', err));
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -72,8 +93,7 @@ export default function AdminSliders() {
       tag: form.tag || '',
     };
 
-    await saveSlider(itemToSave);
-
+    // Instant optimistic update
     setSliders((prev) => {
       const idx = prev.findIndex((s) => s.id === itemToSave.id);
       if (idx >= 0) {
@@ -85,7 +105,9 @@ export default function AdminSliders() {
     });
 
     setIsModalOpen(false);
-    showToast('تم حفظ شريحة العرض بنجاح!', 'success');
+    showToast('تم حفظ شريحة العرض فوراً! ⚡', 'success');
+
+    saveSlider(itemToSave).catch((err) => console.error('Save slider error', err));
   };
 
   return (
@@ -153,8 +175,9 @@ export default function AdminSliders() {
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => handleDelete(slide.id)}
+                    onClick={() => handleDelete(slide.id, slide.title)}
                     className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/40 text-rose-400"
+                    title="حذف الشريحة"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -247,6 +270,16 @@ export default function AdminSliders() {
           </div>
         </div>
       )}
+
+      {/* Confirm Delete Slider Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        title="تأكيد حذف شريحة العرض"
+        itemName={deleteModal.sliderTitle}
+        itemType="شريحة العرض"
+        onConfirm={confirmDeleteSlider}
+        onClose={() => setDeleteModal({ isOpen: false, sliderId: '', sliderTitle: '' })}
+      />
     </div>
   );
 }

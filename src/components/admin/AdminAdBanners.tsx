@@ -4,6 +4,7 @@ import { useStore } from '../../context/StoreContext';
 import { saveAdBanner, deleteAdBanner } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
 import ImageUploadField from './ImageUploadField';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { Plus, Edit2, Trash2, Flame, X, ArrowLeft } from 'lucide-react';
 
 export default function AdminAdBanners() {
@@ -12,6 +13,18 @@ export default function AdminAdBanners() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<AdBanner | null>(null);
+
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    adId: string;
+    adTitle: string;
+  }>({
+    isOpen: false,
+    adId: '',
+    adTitle: '',
+  });
+
   const [form, setForm] = useState<Partial<AdBanner>>({
     title: '',
     subtitle: '',
@@ -49,12 +62,20 @@ export default function AdminAdBanners() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
-      await deleteAdBanner(id);
-      setAdBanners((prev) => prev.filter((a) => a.id !== id));
-      showToast('تم حذف الإعلان بنجاح', 'info');
-    }
+  const handleDelete = (id: string, title?: string) => {
+    setDeleteModal({
+      isOpen: true,
+      adId: id,
+      adTitle: title || 'هذا الإعلان',
+    });
+  };
+
+  const confirmDeleteAd = () => {
+    const id = deleteModal.adId;
+    setAdBanners((prev) => prev.filter((a) => a.id !== id));
+    setDeleteModal({ isOpen: false, adId: '', adTitle: '' });
+    showToast('تم حذف الإعلان بنجاح', 'info');
+    deleteAdBanner(id).catch((err) => console.error('Delete ad banner error', err));
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -75,8 +96,7 @@ export default function AdminAdBanners() {
       is_active: form.is_active !== undefined ? form.is_active : true,
     };
 
-    await saveAdBanner(itemToSave);
-
+    // Instant optimistic update
     setAdBanners((prev) => {
       const idx = prev.findIndex((a) => a.id === itemToSave.id);
       if (idx >= 0) {
@@ -88,7 +108,9 @@ export default function AdminAdBanners() {
     });
 
     setIsModalOpen(false);
-    showToast('تم حفظ الإعلان بنجاح!', 'success');
+    showToast('تم حفظ الإعلان الترويجي فوراً! ⚡', 'success');
+
+    saveAdBanner(itemToSave).catch((err) => console.error('Save ad banner error', err));
   };
 
   return (
@@ -155,9 +177,9 @@ export default function AdminAdBanners() {
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => handleDelete(ad.id)}
+                    onClick={() => handleDelete(ad.id, ad.title)}
                     className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/40 text-rose-400"
-                    title="حذف"
+                    title="حذف الإعلان"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -276,6 +298,16 @@ export default function AdminAdBanners() {
           </div>
         </div>
       )}
+
+      {/* Confirm Delete Ad Banner Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        title="تأكيد حذف الإعلان"
+        itemName={deleteModal.adTitle}
+        itemType="الإعلان"
+        onConfirm={confirmDeleteAd}
+        onClose={() => setDeleteModal({ isOpen: false, adId: '', adTitle: '' })}
+      />
     </div>
   );
 }

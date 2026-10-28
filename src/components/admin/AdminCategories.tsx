@@ -3,6 +3,7 @@ import { Category } from '../../types';
 import { useStore } from '../../context/StoreContext';
 import { saveCategory, deleteCategory } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { Plus, Edit2, Trash2, Layers, X, CornerDownLeft } from 'lucide-react';
 
 export default function AdminCategories() {
@@ -11,6 +12,18 @@ export default function AdminCategories() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    categoryId: string;
+    categoryName: string;
+  }>({
+    isOpen: false,
+    categoryId: '',
+    categoryName: '',
+  });
+
   const [form, setForm] = useState<Partial<Category>>({
     name: '',
     slug: '',
@@ -44,12 +57,21 @@ export default function AdminCategories() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (confirm(`هل أنت متأكد من حذف التصنيف: "${name}"؟`)) {
-      await deleteCategory(id);
-      setCategories((prev) => prev.filter((c) => c.id !== id));
-      showToast(`تم حذف التصنيف "${name}"`, 'info');
-    }
+  const handleDelete = (id: string, name: string) => {
+    setDeleteModal({
+      isOpen: true,
+      categoryId: id,
+      categoryName: name,
+    });
+  };
+
+  const confirmDeleteCategory = () => {
+    const id = deleteModal.categoryId;
+    const name = deleteModal.categoryName;
+    setCategories((prev) => prev.filter((c) => c.id !== id));
+    setDeleteModal({ isOpen: false, categoryId: '', categoryName: '' });
+    showToast(`تم حذف التصنيف "${name}"`, 'info');
+    deleteCategory(id).catch((err) => console.error('Delete category error', err));
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -70,8 +92,7 @@ export default function AdminCategories() {
       is_active: form.is_active !== undefined ? form.is_active : true,
     };
 
-    await saveCategory(categoryToSave);
-
+    // Instant optimistic update
     setCategories((prev) => {
       const idx = prev.findIndex((c) => c.id === categoryToSave.id);
       if (idx >= 0) {
@@ -83,7 +104,9 @@ export default function AdminCategories() {
     });
 
     setIsModalOpen(false);
-    showToast(`تم حفظ التصنيف "${categoryToSave.name}" بنجاح!`, 'success');
+    showToast(`تم حفظ التصنيف "${categoryToSave.name}" فوراً! ⚡`, 'success');
+
+    saveCategory(categoryToSave).catch((err) => console.error('Save category error', err));
   };
 
   return (
@@ -265,6 +288,16 @@ export default function AdminCategories() {
           </div>
         </div>
       )}
+
+      {/* Confirm Delete Category Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        title="تأكيد حذف التصنيف"
+        itemName={deleteModal.categoryName}
+        itemType="التصنيف"
+        onConfirm={confirmDeleteCategory}
+        onClose={() => setDeleteModal({ isOpen: false, categoryId: '', categoryName: '' })}
+      />
     </div>
   );
 }

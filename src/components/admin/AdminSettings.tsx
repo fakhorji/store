@@ -3,6 +3,7 @@ import { useStore } from '../../context/StoreContext';
 import { saveStoreSettings } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
 import ImageUploadField from './ImageUploadField';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { PaymentMethod } from '../../types';
 import {
   MessageCircle,
@@ -22,20 +23,42 @@ import {
 import RoyalAdPopup from '../RoyalAdPopup';
 
 export default function AdminSettings() {
-  const { settings, setSettings, refreshData } = useStore();
+  const { settings, setSettings } = useStore();
   const { showToast } = useToast();
 
   const [form, setForm] = useState(settings);
   const [newPaymentName, setNewPaymentName] = useState('');
   const [newPaymentDesc, setNewPaymentDesc] = useState('');
   const [showPreviewPopup, setShowPreviewPopup] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Confirm delete payment method state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    paymentId: string;
+    paymentName: string;
+  }>({
+    isOpen: false,
+    paymentId: '',
+    paymentName: '',
+  });
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    await saveStoreSettings(form);
+    setIsSaving(true);
+
+    // Instant optimistic update
     setSettings(form);
-    showToast('تم حفظ كافة إعدادات المتجر وطرق الدفع بنجاح!', 'success');
-    refreshData();
+    localStorage.setItem('dz_store_name', form.store_name);
+    showToast('تم حفظ وتطبيق كافة إعدادات المتجر فوراً! ⚡', 'success');
+
+    try {
+      await saveStoreSettings(form);
+    } catch (err) {
+      console.error('Error saving settings to Supabase', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleTogglePaymentMethod = (id: string) => {
@@ -46,10 +69,12 @@ export default function AdminSettings() {
     setForm({ ...form, payment_methods: updated });
   };
 
-  const handleDeletePaymentMethod = (id: string) => {
+  const confirmDeletePaymentMethod = () => {
     const currentMethods = form.payment_methods || [];
-    setForm({ ...form, payment_methods: currentMethods.filter((pm) => pm.id !== id) });
-    showToast('تمت إزالة وسيلة الدفع', 'info');
+    const updated = currentMethods.filter((pm) => pm.id !== deleteModal.paymentId);
+    setForm({ ...form, payment_methods: updated });
+    setDeleteModal({ isOpen: false, paymentId: '', paymentName: '' });
+    showToast('تم حذف وسيلة الدفع بنجاح', 'info');
   };
 
   const handleAddPaymentMethod = () => {
@@ -242,7 +267,7 @@ export default function AdminSettings() {
 
                 <button
                   type="button"
-                  onClick={() => handleDeletePaymentMethod(method.id)}
+                  onClick={() => setDeleteModal({ isOpen: true, paymentId: method.id, paymentName: method.name })}
                   className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/40 text-rose-400 transition-colors"
                   title="حذف طريقة الدفع"
                 >
@@ -518,14 +543,25 @@ export default function AdminSettings() {
         <RoyalAdPopup forceShow={true} onClosePreview={() => setShowPreviewPopup(false)} />
       )}
 
+      {/* Confirm Delete Payment Method Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        title="تأكيد حذف وسيلة الدفع"
+        itemName={deleteModal.paymentName}
+        itemType="وسيلة الدفع"
+        onConfirm={confirmDeletePaymentMethod}
+        onClose={() => setDeleteModal({ isOpen: false, paymentId: '', paymentName: '' })}
+      />
+
       {/* Save Button */}
       <div className="pt-2">
         <button
           type="submit"
-          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition-all"
+          disabled={isSaving}
+          className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          <span>حفظ وتطبيق جميع الإعدادات فوراً</span>
+          <span>{isSaving ? 'جاري الحفظ والمزامنة...' : 'حفظ وتطبيق جميع الإعدادات فوراً'}</span>
         </button>
       </div>
     </form>

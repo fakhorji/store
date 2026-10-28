@@ -4,6 +4,7 @@ import { useStore } from '../../context/StoreContext';
 import { saveProduct, deleteProduct } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
 import ImageUploadField from './ImageUploadField';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import {
   Plus,
   Edit2,
@@ -27,6 +28,17 @@ export default function AdminProducts() {
   const [search, setSearch] = useState('');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Royal Confirm Delete Modal state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    productId: string;
+    productName: string;
+  }>({
+    isOpen: false,
+    productId: '',
+    productName: '',
+  });
 
   // Form state
   const [form, setForm] = useState<Partial<Product>>({
@@ -87,12 +99,21 @@ export default function AdminProducts() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (confirm(`هل أنت متأكد من حذف المنتج: "${name}"؟`)) {
-      await deleteProduct(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      showToast(`تم حذف المنتج "${name}" بنجاح`, 'info');
-    }
+  const handleDelete = (id: string, name: string) => {
+    setDeleteModal({
+      isOpen: true,
+      productId: id,
+      productName: name,
+    });
+  };
+
+  const confirmDeleteProduct = () => {
+    const id = deleteModal.productId;
+    const name = deleteModal.productName;
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+    setDeleteModal({ isOpen: false, productId: '', productName: '' });
+    showToast(`تم حذف المنتج "${name}" بنجاح`, 'info');
+    deleteProduct(id).catch((err) => console.error('Delete product error', err));
   };
 
   const handleAddPackage = () => {
@@ -151,8 +172,7 @@ export default function AdminProducts() {
       created_at: form.created_at || new Date().toISOString(),
     };
 
-    await saveProduct(productToSave);
-
+    // 1. Instant optimistic UI update (0ms delay)
     setProducts((prev) => {
       const idx = prev.findIndex((p) => p.id === productToSave.id);
       if (idx >= 0) {
@@ -164,7 +184,10 @@ export default function AdminProducts() {
     });
 
     setIsModalOpen(false);
-    showToast(`تم حفظ المنتج "${productToSave.name}" بنجاح!`, 'success');
+    showToast(`تم حفظ المنتج "${productToSave.name}" فوراً! ⚡`, 'success');
+
+    // 2. Fast background database upsert
+    saveProduct(productToSave).catch((err) => console.error('Save product error', err));
   };
 
   return (
@@ -488,6 +511,16 @@ export default function AdminProducts() {
           </div>
         </div>
       )}
+
+      {/* Confirm Delete Product Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        title="تأكيد حذف المنتج"
+        itemName={deleteModal.productName}
+        itemType="المنتج"
+        onConfirm={confirmDeleteProduct}
+        onClose={() => setDeleteModal({ isOpen: false, productId: '', productName: '' })}
+      />
     </div>
   );
 }

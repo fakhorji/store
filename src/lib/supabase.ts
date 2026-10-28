@@ -98,6 +98,9 @@ export async function getStoreSettings(): Promise<StoreSettings> {
     if (!error && data) {
       const merged = { ...INITIAL_SETTINGS, ...data };
       setLocal(STORAGE_KEYS.SETTINGS, merged);
+      if (merged.store_name) {
+        localStorage.setItem('dz_store_name', merged.store_name);
+      }
       return merged;
     }
   } catch (err) {
@@ -108,12 +111,32 @@ export async function getStoreSettings(): Promise<StoreSettings> {
 
 export async function saveStoreSettings(settings: StoreSettings): Promise<boolean> {
   setLocal(STORAGE_KEYS.SETTINGS, settings);
+  if (settings.store_name) {
+    localStorage.setItem('dz_store_name', settings.store_name);
+  }
+
   try {
-    const { data } = await supabase.from('settings').select('id').limit(1).maybeSingle();
-    if (data?.id) {
-      await supabase.from('settings').update(settings).eq('id', data.id);
-    } else {
-      await supabase.from('settings').insert([settings]);
+    const payload = {
+      id: 'default_settings',
+      ...settings,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from('settings').upsert([payload]);
+    if (error) {
+      console.warn('Full settings upsert returned error, executing fallback upsert:', error.message);
+      // Fallback in case newer columns are not yet added in user Supabase SQL
+      const safePayload = {
+        id: 'default_settings',
+        store_name: settings.store_name,
+        store_tagline: settings.store_tagline,
+        whatsapp_number: settings.whatsapp_number,
+        whatsapp_prefix: settings.whatsapp_prefix,
+        logo_url: settings.logo_url,
+        admin_email: settings.admin_email,
+        admin_password: settings.admin_password,
+        updated_at: new Date().toISOString(),
+      };
+      await supabase.from('settings').upsert([safePayload]);
     }
     return true;
   } catch (err) {
@@ -135,6 +158,8 @@ export async function getCurrencySettings(): Promise<CurrencySettings> {
         try_rate: Number(data.try_rate) || INITIAL_CURRENCY_SETTINGS.try_rate,
         syp_rate: Number(data.syp_rate) || INITIAL_CURRENCY_SETTINGS.syp_rate,
         last_updated: data.updated_at || new Date().toISOString(),
+        api_endpoint: data.api_endpoint || undefined,
+        api_key: data.api_key || undefined,
       };
       setLocal(STORAGE_KEYS.CURRENCY, res);
       return res;
@@ -149,17 +174,27 @@ export async function saveCurrencySettings(settings: CurrencySettings): Promise<
   setLocal(STORAGE_KEYS.CURRENCY, settings);
   try {
     const payload = {
+      id: 'default_rates',
       base_currency: settings.base_currency,
       mode: settings.mode,
       try_rate: settings.try_rate,
       syp_rate: settings.syp_rate,
+      api_endpoint: settings.api_endpoint,
+      api_key: settings.api_key,
       updated_at: new Date().toISOString(),
     };
-    const { data } = await supabase.from('currency_rates').select('id').limit(1).maybeSingle();
-    if (data?.id) {
-      await supabase.from('currency_rates').update(payload).eq('id', data.id);
-    } else {
-      await supabase.from('currency_rates').insert([payload]);
+    const { error } = await supabase.from('currency_rates').upsert([payload]);
+    if (error) {
+      console.warn('Full currency upsert returned error, attempting fallback upsert:', error.message);
+      const fallbackPayload = {
+        id: 'default_rates',
+        base_currency: settings.base_currency,
+        mode: settings.mode,
+        try_rate: settings.try_rate,
+        syp_rate: settings.syp_rate,
+        updated_at: new Date().toISOString(),
+      };
+      await supabase.from('currency_rates').upsert([fallbackPayload]);
     }
     return true;
   } catch (err) {

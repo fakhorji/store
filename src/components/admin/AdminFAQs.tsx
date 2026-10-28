@@ -3,6 +3,7 @@ import { FAQItem } from '../../types';
 import { useStore } from '../../context/StoreContext';
 import { saveFAQ, deleteFAQ } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { Plus, Edit2, Trash2, HelpCircle, X } from 'lucide-react';
 
 export default function AdminFAQs() {
@@ -11,6 +12,18 @@ export default function AdminFAQs() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<FAQItem | null>(null);
+
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    faqId: string;
+    faqQuestion: string;
+  }>({
+    isOpen: false,
+    faqId: '',
+    faqQuestion: '',
+  });
+
   const [form, setForm] = useState<Partial<FAQItem>>({
     question: '',
     answer: '',
@@ -38,12 +51,20 @@ export default function AdminFAQs() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
-      await deleteFAQ(id);
-      setFaqs((prev) => prev.filter((f) => f.id !== id));
-      showToast('تم حذف السؤال بنجاح', 'info');
-    }
+  const handleDelete = (id: string, question: string) => {
+    setDeleteModal({
+      isOpen: true,
+      faqId: id,
+      faqQuestion: question,
+    });
+  };
+
+  const confirmDeleteFAQ = () => {
+    const id = deleteModal.faqId;
+    setFaqs((prev) => prev.filter((f) => f.id !== id));
+    setDeleteModal({ isOpen: false, faqId: '', faqQuestion: '' });
+    showToast('تم حذف السؤال بنجاح', 'info');
+    deleteFAQ(id).catch((err) => console.error('Delete FAQ error', err));
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -62,8 +83,7 @@ export default function AdminFAQs() {
       is_active: form.is_active !== undefined ? form.is_active : true,
     };
 
-    await saveFAQ(itemToSave);
-
+    // Instant optimistic update
     setFaqs((prev) => {
       const idx = prev.findIndex((f) => f.id === itemToSave.id);
       if (idx >= 0) {
@@ -75,7 +95,9 @@ export default function AdminFAQs() {
     });
 
     setIsModalOpen(false);
-    showToast('تم حفظ السؤال بنجاح!', 'success');
+    showToast('تم حفظ السؤال فوراً! ⚡', 'success');
+
+    saveFAQ(itemToSave).catch((err) => console.error('Save FAQ error', err));
   };
 
   return (
@@ -116,8 +138,9 @@ export default function AdminFAQs() {
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => handleDelete(faq.id)}
+                  onClick={() => handleDelete(faq.id, faq.question)}
                   className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/40 text-rose-400"
+                  title="حذف السؤال"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -182,6 +205,16 @@ export default function AdminFAQs() {
           </div>
         </div>
       )}
+
+      {/* Confirm Delete FAQ Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        title="تأكيد حذف السؤال الشائع"
+        itemName={deleteModal.faqQuestion}
+        itemType="السؤال الشائع"
+        onConfirm={confirmDeleteFAQ}
+        onClose={() => setDeleteModal({ isOpen: false, faqId: '', faqQuestion: '' })}
+      />
     </div>
   );
 }

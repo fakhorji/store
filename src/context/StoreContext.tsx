@@ -194,15 +194,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [adBanners, setAdBanners] = useState<AdBanner[]>(INITIAL_AD_BANNERS);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
-  const [settings, setSettings] = useState<StoreSettings>({
-    whatsapp_number: '905521234567',
-    whatsapp_prefix: 'مرحباً، أرغب في إتمام طلب المنتج الرقمي التالي:',
-    store_name: 'ديجيتال زون',
-    store_tagline: 'المتجر الأول للمنتجات الرقمية والاشتراكات مع الدفع والتسليم عبر واتساب',
-    admin_email: 'admin@store.com',
-    admin_password: 'admin123456',
-    payment_methods: INITIAL_PAYMENT_METHODS,
+  const [settings, setSettings] = useState<StoreSettings>(() => {
+    try {
+      const cached = localStorage.getItem('dz_store_settings');
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return {
+      whatsapp_number: '905521234567',
+      whatsapp_prefix: 'مرحباً، أرغب في إتمام طلب المنتج الرقمي التالي:',
+      store_name: localStorage.getItem('dz_store_name') || 'ديجيتال زون',
+      store_tagline: 'المتجر الأول للمنتجات الرقمية والاشتراكات مع الدفع والتسليم عبر واتساب',
+      admin_email: 'admin@store.com',
+      admin_password: 'admin123456',
+      payment_methods: INITIAL_PAYMENT_METHODS,
+    };
   });
+
+  useEffect(() => {
+    if (settings.store_name) {
+      localStorage.setItem('dz_store_name', settings.store_name);
+    }
+    localStorage.setItem('dz_store_settings', JSON.stringify(settings));
+  }, [settings]);
 
   const [dbStatus, setDbStatus] = useState({
     connected: false,

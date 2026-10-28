@@ -29,7 +29,7 @@ export default function ContinuousAdSlider() {
     }
   };
 
-  // Render a single ad card with adaptive image container responsive to any aspect ratio
+  // Render a single ad card that hugs the image tightly like a glove without side black bars
   const renderCard = (banner: (typeof activeBanners)[0], keySuffix: string | number) => {
     const hasTitle = Boolean(banner.title && banner.title.trim().length > 0);
     const hasSubtitle = Boolean(banner.subtitle && banner.subtitle.trim().length > 0);
@@ -40,33 +40,21 @@ export default function ContinuousAdSlider() {
       <div
         key={`${banner.id}-${keySuffix}`}
         onClick={() => handleBannerClick(banner.link_url)}
-        className="group relative h-48 sm:h-56 md:h-60 min-w-[240px] sm:min-w-[300px] max-w-[460px] rounded-2xl overflow-hidden shrink-0 cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 border border-slate-200/80 dark:border-slate-800 bg-slate-950 flex flex-col justify-between"
+        className="group relative h-48 sm:h-56 md:h-60 w-auto shrink-0 rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-2xl transition-all duration-300 border border-slate-200/90 dark:border-slate-800 flex items-center justify-center bg-slate-100 dark:bg-slate-900"
         dir="rtl"
       >
-        {/* Responsive Background / Image Container: handles square, portrait, 16:9, or banners */}
-        <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-slate-950">
-          {/* Ambient blurred backdrop matching the image colors */}
-          <div
-            className="absolute inset-0 bg-cover bg-center scale-125 filter blur-lg opacity-35 transition-transform duration-700 group-hover:scale-135"
-            style={{ backgroundImage: `url(${banner.image_url})` }}
-          />
+        {/* Crisp foreground image that dictates the container's exact width (1:1 square, 4:3, 16:9, etc.) */}
+        <img
+          src={banner.image_url}
+          alt={banner.title || 'إعلان ترويجي'}
+          className="h-48 sm:h-56 md:h-60 w-auto max-w-none block object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+          loading="lazy"
+        />
 
-          {/* Crisp foreground image that respects its natural aspect ratio */}
-          <img
-            src={banner.image_url}
-            alt={banner.title || 'إعلان ترويجي'}
-            className="relative z-1 max-h-full max-w-full w-auto h-full object-contain mx-auto group-hover:scale-105 transition-transform duration-700 ease-out"
-            loading="lazy"
-          />
-
-          {/* Subtle gradient overlays only if text content exists */}
-          {hasTextContent && (
-            <>
-              <div className="absolute inset-0 z-2 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent pointer-events-none" />
-              <div className="absolute inset-0 z-2 bg-gradient-to-r from-slate-950/30 via-transparent to-transparent pointer-events-none" />
-            </>
-          )}
-        </div>
+        {/* Subtle bottom gradient overlay only when text content exists */}
+        {hasTextContent && (
+          <div className="absolute inset-0 z-2 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent pointer-events-none" />
+        )}
 
         {/* Optional Badge at Top Right */}
         {hasBadge && (
@@ -88,7 +76,7 @@ export default function ContinuousAdSlider() {
             )}
 
             {hasSubtitle && (
-              <p className="text-[11px] sm:text-xs text-slate-300 line-clamp-1 mt-0.5 font-medium">
+              <p className="text-[11px] sm:text-xs text-slate-200 line-clamp-1 mt-0.5 font-medium drop-shadow">
                 {banner.subtitle}
               </p>
             )}

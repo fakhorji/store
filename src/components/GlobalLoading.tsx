@@ -1,7 +1,12 @@
 import { motion } from 'motion/react';
 import { Sparkles } from 'lucide-react';
+import { useStore } from '../context/StoreContext';
 
 export default function GlobalLoading() {
+  const { settings } = useStore();
+  const storeName = settings?.store_name || localStorage.getItem('dz_store_name') || 'ديجيتال زون | DigitalZone';
+  const tagline = settings?.store_tagline || 'جاري تحميل المنتجات وأسعار الصرف اللحظية...';
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 text-white" dir="rtl">
       <div className="relative flex items-center justify-center">
@@ -19,13 +24,13 @@ export default function GlobalLoading() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="mt-6 text-center"
+        className="mt-6 text-center px-4"
       >
-        <h2 className="text-xl font-bold tracking-tight text-white mb-1">
-          ديجيتال زون | DigitalZone
+        <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mb-1.5 drop-shadow-md">
+          {storeName}
         </h2>
-        <p className="text-sm text-slate-400">
-          جاري تحميل المنتجات وأسعار الصرف اللحظية...
+        <p className="text-xs sm:text-sm text-slate-400 max-w-sm mx-auto">
+          {tagline}
         </p>
       </motion.div>
     </div>

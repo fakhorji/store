@@ -3,6 +3,7 @@ import { NewsItem } from '../../types';
 import { useStore } from '../../context/StoreContext';
 import { saveNews, deleteNews } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { Plus, Edit2, Trash2, Megaphone, X, Flame, Bell, AlertTriangle } from 'lucide-react';
 
 export default function AdminNews() {
@@ -11,6 +12,18 @@ export default function AdminNews() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<NewsItem | null>(null);
+
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    newsId: string;
+    newsMessage: string;
+  }>({
+    isOpen: false,
+    newsId: '',
+    newsMessage: '',
+  });
+
   const [form, setForm] = useState<Partial<NewsItem>>({
     message: '',
     type: 'promo',
@@ -34,12 +47,20 @@ export default function AdminNews() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا التنبيه؟')) {
-      await deleteNews(id);
-      setNews((prev) => prev.filter((n) => n.id !== id));
-      showToast('تم حذف التنبيه بنجاح', 'info');
-    }
+  const handleDelete = (id: string, message: string) => {
+    setDeleteModal({
+      isOpen: true,
+      newsId: id,
+      newsMessage: message,
+    });
+  };
+
+  const confirmDeleteNews = () => {
+    const id = deleteModal.newsId;
+    setNews((prev) => prev.filter((n) => n.id !== id));
+    setDeleteModal({ isOpen: false, newsId: '', newsMessage: '' });
+    showToast('تم حذف التنبيه بنجاح', 'info');
+    deleteNews(id).catch((err) => console.error('Delete news error', err));
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -57,8 +78,7 @@ export default function AdminNews() {
       created_at: form.created_at || new Date().toISOString(),
     };
 
-    await saveNews(itemToSave);
-
+    // Instant optimistic update
     setNews((prev) => {
       const idx = prev.findIndex((n) => n.id === itemToSave.id);
       if (idx >= 0) {
@@ -70,7 +90,9 @@ export default function AdminNews() {
     });
 
     setIsModalOpen(false);
-    showToast('تم حفظ التنبيه بنجاح!', 'success');
+    showToast('تم حفظ التنبيه فوراً! ⚡', 'success');
+
+    saveNews(itemToSave).catch((err) => console.error('Save news error', err));
   };
 
   return (
@@ -133,8 +155,9 @@ export default function AdminNews() {
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
               <button
-                onClick={() => handleDelete(item.id)}
+                onClick={() => handleDelete(item.id, item.message)}
                 className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/40 text-rose-400"
+                title="حذف التنبيه"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -214,6 +237,16 @@ export default function AdminNews() {
           </div>
         </div>
       )}
+
+      {/* Confirm Delete News Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        title="تأكيد حذف التنبيه"
+        itemName={deleteModal.newsMessage}
+        itemType="التنبيه"
+        onConfirm={confirmDeleteNews}
+        onClose={() => setDeleteModal({ isOpen: false, newsId: '', newsMessage: '' })}
+      />
     </div>
   );
 }

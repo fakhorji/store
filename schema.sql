@@ -137,7 +137,10 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ترقية جدول الإعدادات بإضافة الأعمدة الجديدة إن كانت الجداول موجودة مسبقاً
+-- ترقية جدول الإعدادات بإضافة كافة الأعمدة الحديثة إن كانت الجداول موجودة مسبقاً
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS currency_api_endpoint TEXT DEFAULT 'https://open.er-api.com/v6/latest/USD';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS currency_api_key TEXT;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS payment_methods JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_enabled BOOLEAN DEFAULT true;
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_title TEXT DEFAULT 'عروض ملكية كبرى: خصم 20% على شحن الألعاب والبطاقات!';
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS popup_ad_subtitle TEXT DEFAULT 'لفترة محدودة - استمتع بأقوى العروض الحصرية';
@@ -155,8 +158,14 @@ CREATE TABLE IF NOT EXISTS currency_rates (
   mode TEXT DEFAULT 'manual' CHECK (mode IN ('api', 'manual')),
   try_rate NUMERIC(10, 2) DEFAULT 34.25,
   syp_rate NUMERIC(10, 2) DEFAULT 14800.00,
+  api_endpoint TEXT DEFAULT 'https://open.er-api.com/v6/latest/USD',
+  api_key TEXT,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ترقية جدول أسعار الصرف
+ALTER TABLE currency_rates ADD COLUMN IF NOT EXISTS api_endpoint TEXT DEFAULT 'https://open.er-api.com/v6/latest/USD';
+ALTER TABLE currency_rates ADD COLUMN IF NOT EXISTS api_key TEXT;
 
 -- ==============================================================================
 -- تمكين الأمان وسياسات الوصول (Row Level Security - RLS)
