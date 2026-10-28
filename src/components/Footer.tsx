@@ -1,13 +1,13 @@
 import { useStore } from '../context/StoreContext';
 import {
   Sparkles,
-  MessageCircle,
   Send,
   Instagram,
   Facebook,
   ShieldCheck,
   Zap,
   CreditCard,
+  Crown,
   Heart,
   Headphones,
   CheckCircle2,
@@ -20,81 +20,82 @@ export default function Footer() {
   const activePaymentMethods = (settings.payment_methods || []).filter((pm) => pm.is_active);
 
   return (
-    <footer className="relative bg-slate-950 border-t border-slate-800/80 text-slate-400 text-xs pt-16 pb-24 md:pb-12 overflow-hidden" dir="rtl">
-      {/* Background radial glow */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+    <footer className="relative bg-slate-950 text-slate-400 text-xs border-t border-slate-800/90 pt-14 pb-24 md:pb-10 overflow-hidden" dir="rtl">
+      {/* Ambient background glows */}
+      <div className="absolute top-0 right-1/4 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
-        {/* Top Feature Strip */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-12 mb-12 border-b border-slate-800/80">
-          <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+        {/* Top 3 Trust Cards Row - Symmetrical & Clean */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pb-10 mb-10 border-b border-slate-800/80">
+          <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 flex items-center gap-3.5 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
               <Zap className="w-5 h-5" />
             </div>
             <div>
-              <h5 className="font-bold text-white text-sm">تسليم مباشر وسريع</h5>
+              <h5 className="font-extrabold text-white text-xs sm:text-sm">تسليم سريع ومباشر</h5>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                تنفيذ وشحن طلباتك فوراً عبر واتساب بعد تأكيد التحويل
+                تنفيذ وشحن فوري لطلبك عبر واتساب فور تأكيد التحويل
               </p>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 flex items-center gap-3.5 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h5 className="font-bold text-white text-sm">ضمان ذهبي 100%</h5>
+              <h5 className="font-extrabold text-white text-xs sm:text-sm">منتجات رسمية ومضمونة</h5>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                أكواد واشتراكات رسمية ومضمونة طوال فترة الصلاحية
+                ضمان كامل المدة 100% مع استبدال فوري عند أي عائق
               </p>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
+          <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 flex items-center gap-3.5 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
               <Headphones className="w-5 h-5" />
             </div>
             <div>
-              <h5 className="font-bold text-white text-sm">دعم فني متواصل 24/7</h5>
+              <h5 className="font-extrabold text-white text-xs sm:text-sm">دعم فني متواصل 24/7</h5>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                فريق متفرغ لمساعدتك وتلقي استفساراتك عبر واتساب
+                فريق خدمة عملاء متاح على مدار الساعة للإجابة على استفساراتكم
               </p>
             </div>
           </div>
         </div>
 
-        {/* Main Footer Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
-          {/* Brand Col */}
-          <div className="md:col-span-5 space-y-4">
+        {/* Organized 4-Column Footer Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8 pb-10">
+          {/* Col 1: Brand & Bio (4 cols) */}
+          <div className="lg:col-span-4 space-y-3.5">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-md shadow-amber-500/20 shrink-0">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <span className="font-black text-lg text-white block">
+                <span className="font-black text-base text-white block">
                   {settings.store_name}
                 </span>
-                <span className="text-[11px] text-slate-400">
-                  منصة التجارة الرقمية المعتمدة
+                <span className="text-[10px] text-slate-400">
+                  منصة المنتجات الرقمية والبطاقات
                 </span>
               </div>
             </div>
 
             <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
               {settings.store_tagline ||
-                'المتجر الأول المتخصص في شحن الألعاب، بطاقات المتاجر العالمية، واشتراكات البرامج والذكاء الاصطناعي مع الدفع والتسليم عبر واتساب.'}
+                'متجر رقمي متخصص في شحن الألعاب الإلكترونية، بطاقات المتاجر العالمية، والاشتراكات البرمجية المعتمدة بأفضل الأسعار.'}
             </p>
 
+            {/* Social Links */}
             <div className="flex items-center gap-2 pt-1">
               {settings.telegram_url && (
                 <a
                   href={settings.telegram_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 transition-colors border border-slate-800"
+                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-400 transition-colors border border-slate-800"
                   aria-label="Telegram"
                 >
                   <Send className="w-4 h-4" />
@@ -105,7 +106,7 @@ export default function Footer() {
                   href={settings.instagram_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 transition-colors border border-slate-800"
+                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-400 transition-colors border border-slate-800"
                   aria-label="Instagram"
                 >
                   <Instagram className="w-4 h-4" />
@@ -116,102 +117,118 @@ export default function Footer() {
                   href={settings.facebook_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 transition-colors border border-slate-800"
+                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-amber-400 transition-colors border border-slate-800"
                   aria-label="Facebook"
                 >
                   <Facebook className="w-4 h-4" />
                 </a>
               )}
-              <a
-                href={`https://wa.me/${(settings.whatsapp_number || '905521234567').replace(/[^0-9]/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 transition-colors border border-emerald-500/30 flex items-center gap-1.5 font-bold"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>واتساب المتجر</span>
-              </a>
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div className="md:col-span-3 space-y-3">
-            <h5 className="text-white font-extrabold text-sm">أقسام المتجر</h5>
-            <ul className="space-y-2.5 text-xs text-slate-400">
+          {/* Col 2: Categories Links (2 cols) */}
+          <div className="lg:col-span-2 space-y-3">
+            <h5 className="text-white font-black text-xs sm:text-sm">الأقسام السريعة</h5>
+            <ul className="space-y-2 text-xs text-slate-400">
               <li>
                 <a href="#products-section" className="hover:text-amber-400 transition-colors flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>شدات ببجي وشحن ألعاب</span>
+                  <span>شحن ألعاب وببجي</span>
                 </a>
               </li>
               <li>
                 <a href="#products-section" className="hover:text-amber-400 transition-colors flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>بطاقات بلايستيشن وستيم</span>
+                  <span>بطاقات بلايستيشن</span>
                 </a>
               </li>
               <li>
                 <a href="#products-section" className="hover:text-amber-400 transition-colors flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>اشتراكات كانفا وبرامج الذكاء الاصطناعي</span>
+                  <span>اشتراكات كانفا وبرامج</span>
                 </a>
               </li>
               <li>
                 <a href="#products-section" className="hover:text-amber-400 transition-colors flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>مفاتيح ويندوز 11 برو والأنظمة</span>
+                  <span>مفاتيح ويندوز 11 برو</span>
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Controlled Payment Methods */}
-          <div className="md:col-span-4 space-y-3">
-            <h5 className="text-white font-extrabold text-sm flex items-center gap-2">
+          {/* Col 3: Customer Care (2 cols) */}
+          <div className="lg:col-span-2 space-y-3">
+            <h5 className="text-white font-black text-xs sm:text-sm">خدمة العملاء</h5>
+            <ul className="space-y-2 text-xs text-slate-400">
+              <li className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>تنفيذ مباشر للطلبات</span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-amber-500" />
+                <span>دفع آمن وموثوق</span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-500" />
+                <span>ضمان كامل المدة</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 4: Controlled Payment Methods (4 cols) */}
+          <div className="lg:col-span-4 space-y-3">
+            <h5 className="text-white font-black text-xs sm:text-sm flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-emerald-400" />
-              <span>طرق الدفع المعتمدة</span>
+              <span>طرق الدفع المدعومة</span>
             </h5>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              نستقبل الدفع عبر البنوك والمحافظ الإلكترونية المحلية والعالمية:
+            <p className="text-[11px] text-slate-400">
+              نقبل الدفع عبر البنوك والمحافظ الإلكترونية المحلية والدولية:
             </p>
 
-            <div className="flex flex-wrap gap-2 pt-1">
-              {activePaymentMethods.length > 0 ? (
-                activePaymentMethods.map((method) => (
-                  <div
-                    key={method.id}
-                    className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1.5 shadow-sm"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{method.name}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-slate-500 text-xs">شام كاش، زين كاش، باربارا، USDT</div>
-              )}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {activePaymentMethods.map((method) => (
+                <span
+                  key={method.id}
+                  className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 font-bold text-[11px] flex items-center gap-1 shadow-sm"
+                >
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                  <span>{method.name}</span>
+                </span>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Bottom Sub-bar */}
-        <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-400 text-xs">
-          <div className="flex items-center gap-1.5">
+        {/* Bottom Bar: Royal Developer Container & Copyright */}
+        <div className="pt-8 border-t border-slate-800/90 flex flex-col md:flex-row items-center justify-between gap-5">
+          {/* Copyright text */}
+          <div className="flex items-center gap-1.5 text-slate-400 text-xs text-center md:text-right">
             <span>جميع الحقوق محفوظة © {new Date().getFullYear()}</span>
             <span className="text-white font-bold">{settings.store_name}</span>
           </div>
 
-          {/* Required Credit Link: تمت برمجة المتجر بكل حب عن طريق alibuild (alibuild.sbs) */}
-          <div className="flex items-center gap-1.5 font-medium">
-            <span>تمت برمجة المتجر بكل حب عن طريق</span>
-            <a
-              href="https://alibuild.sbs"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-extrabold text-amber-400 hover:text-amber-300 hover:underline transition-colors flex items-center gap-1"
-            >
-              <span>alibuild</span>
-              <span className="text-[10px] opacity-75 font-mono">(.sbs)</span>
-            </a>
+          {/* ROYAL DEVELOPER CONTAINER WITH REPEATING SHIMMER & GLOW EFFECT */}
+          <div className="relative group">
+            <div className="royal-container relative flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 border border-amber-500/40 shadow-xl backdrop-blur-md transition-all">
+              {/* Crown Icon */}
+              <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center shadow-md shrink-0">
+                <Crown className="w-4 h-4 fill-slate-950 stroke-[2]" />
+              </div>
+
+              {/* Royal Text & Link */}
+              <div className="flex items-center gap-1.5 text-xs font-bold">
+                <span className="text-slate-200">تمت برمجة المتجر بكل حب عن طريق</span>
+                <a
+                  href="https://alibuild.sbs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="royal-shimmer-text font-black text-sm tracking-wide hover:brightness-125 transition-all focus:outline-none drop-shadow-md"
+                >
+                  alibuild
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>

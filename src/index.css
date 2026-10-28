@@ -39,7 +39,7 @@
   background: rgba(148, 163, 184, 0.6);
 }
 
-/* Ticker marquee animation left */
+/* Top news ticker marquee */
 @keyframes marquee-rtl {
   0% { transform: translateX(0%); }
   100% { transform: translateX(50%); }
@@ -55,28 +55,59 @@
   animation-play-state: paused;
 }
 
-/* Continuous smooth slider moving to the right */
-@keyframes marquee-to-right {
-  0% { transform: translateX(-50%); }
-  100% { transform: translateX(0%); }
+/* Seamless infinite marquee to the right for ad slider */
+@keyframes marquee-scroll-right {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
 }
 
-.animate-marquee-right {
-  display: inline-flex;
-  white-space: nowrap;
-  animation: marquee-to-right 35s linear infinite;
+.animate-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll-right 30s linear infinite;
 }
 
-.animate-marquee-right:hover {
+.animate-marquee-track:hover {
   animation-play-state: paused;
 }
 
-/* Pulse glow for status indicators */
-@keyframes glow-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.1); }
+/* Royal Golden Shimmer & Glow Animations */
+@keyframes royal-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
-.animate-glow {
-  animation: glow-pulse 2s infinite ease-in-out;
+.royal-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    #fbbf24 0%,
+    #fef08a 25%,
+    #ffffff 50%,
+    #fef08a 75%,
+    #fbbf24 100%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: royal-shimmer 3.5s linear infinite;
+}
+
+@keyframes royal-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.25), inset 0 0 15px rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(245, 158, 11, 0.55), inset 0 0 25px rgba(245, 158, 11, 0.3);
+    border-color: rgba(251, 191, 36, 0.85);
+  }
+}
+
+.royal-container {
+  animation: royal-pulse-glow 3s ease-in-out infinite;
 }

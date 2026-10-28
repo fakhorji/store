@@ -3,7 +3,7 @@
 -- المتجر الإلكتروني للمنتجات الرقمية والبطاقات والاشتراكات
 -- ==============================================================================
 
--- 1. جدول التصنيفات (Categories with Nested Hierarchy Support)
+-- 1. جدول التصنيفات المتفرعة (Categories with Nested Hierarchy Support)
 CREATE TABLE IF NOT EXISTS categories (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS products (
   image_url TEXT,
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'out_of_stock', 'hidden')),
   delivery_type TEXT DEFAULT 'instant' CHECK (delivery_type IN ('instant', 'manual', 'code')),
-  delivery_time TEXT DEFAULT 'تسليم فوري خلال دقائق',
+  delivery_time TEXT DEFAULT 'تسليم سريع ومباشر عبر واتساب',
   badges JSONB DEFAULT '[]'::jsonb,
   features JSONB DEFAULT '[]'::jsonb,
   instructions TEXT,
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS slider_images (
   title TEXT NOT NULL,
   subtitle TEXT,
   image_url TEXT NOT NULL,
-  button_text TEXT DEFAULT 'اطلب الآن',
+  button_text TEXT DEFAULT 'اشحن الآن عبر واتساب',
   link_url TEXT DEFAULT '#products',
   sort_order INTEGER DEFAULT 1,
   is_active BOOLEAN DEFAULT true,
@@ -98,11 +98,11 @@ CREATE TABLE IF NOT EXISTS faqs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. جدول إعدادات المتجر (Store Settings)
+-- 7. جدول إعدادات المتجر وطرق الدفع والـ API (Store Settings)
 CREATE TABLE IF NOT EXISTS settings (
   id TEXT PRIMARY KEY DEFAULT 'default_settings',
   store_name TEXT NOT NULL DEFAULT 'ديجيتال زون',
-  store_tagline TEXT DEFAULT 'المتجر الأول للمنتجات الرقمية والاشتراكات الفورية',
+  store_tagline TEXT DEFAULT 'المتجر الأول للمنتجات الرقمية والاشتراكات مع الدفع والتسليم عبر واتساب',
   whatsapp_number TEXT NOT NULL DEFAULT '905521234567',
   whatsapp_prefix TEXT DEFAULT 'مرحباً، أرغب في إتمام طلب المنتج الرقمي التالي:',
   logo_url TEXT,
@@ -110,8 +110,20 @@ CREATE TABLE IF NOT EXISTS settings (
   instagram_url TEXT,
   facebook_url TEXT,
   support_email TEXT,
-  working_hours TEXT DEFAULT 'خدمة العملاء متوفرة 24/7',
+  working_hours TEXT DEFAULT 'خدمة العملاء متوفرة 24/7 - تسليم سريع ومباشر',
   notice_text TEXT,
+  currency_api_endpoint TEXT DEFAULT 'https://open.er-api.com/v6/latest/USD',
+  currency_api_key TEXT,
+  admin_email TEXT DEFAULT 'admin@store.com',
+  admin_password TEXT DEFAULT 'admin123456',
+  payment_methods JSONB DEFAULT '[
+    {"id": "pm-sham", "name": "شام كاش (Sham Cash)", "nameEn": "Sham Cash", "icon": "Wallet", "description": "تحويل فوري بدون عمولة", "is_active": true, "sort_order": 1},
+    {"id": "pm-zain", "name": "زين كاش (Zain Cash)", "nameEn": "Zain Cash", "icon": "Smartphone", "description": "دفع مباشر لعملاء العراق", "is_active": true, "sort_order": 2},
+    {"id": "pm-papara", "name": "باربارا (Papara / IBAN)", "nameEn": "Papara", "icon": "CreditCard", "description": "تحويل فوري في تركيا", "is_active": true, "sort_order": 3},
+    {"id": "pm-usdt", "name": "USDT (TRC20)", "nameEn": "USDT Crypto", "icon": "Coins", "description": "عملات رقمية مشفرة عالمياً", "is_active": true, "sort_order": 4},
+    {"id": "pm-syriatel", "name": "سيريتل كاش (Syriatel Cash)", "nameEn": "Syriatel Cash", "icon": "PhoneCall", "description": "دفع عبر سيريتل كاش في سوريا", "is_active": true, "sort_order": 5},
+    {"id": "pm-bank", "name": "حوالات الهرم والفؤاد", "nameEn": "Haram / Fouad", "icon": "Landmark", "description": "إرسال حوالة بالليرة السورية أو الدولار", "is_active": true, "sort_order": 6}
+  ]'::jsonb,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -177,14 +189,14 @@ ON CONFLICT (id) DO NOTHING;
 
 -- المنتجات
 INSERT INTO products (id, name, slug, category_id, category_name, mode, base_price_usd, description, image_url, status, delivery_type, delivery_time, badges, features, instructions) VALUES
-('prod-pubg-uc', 'شدات ببجي موبايل (PUBG UC) - شحن فوري بالـ ID', 'pubg-mobile-uc', 'cat-pubg', 'شدات ببجي موبايل', 'packages', 0.99, 'شحن شدات ببجي موبايل العالمية رسمياً وفورياً عن طريق معرف اللاعب (Player ID).', 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80', 'active', 'instant', 'تسليم فوري عبر الـ ID خلال 60 ثانية', '["الأكثر مبيعاً 🔥", "تسليم آلي فوري"]'::jsonb, '["شحن رسمي معتمد 100%", "لا نحتاج كلمة المرور، فقط الـ Player ID", "دعم كافة الدول والحسابات العالمية"]'::jsonb, 'يرجى تزويدنا برقم الآيدي (Player ID) واسمك داخل اللعبة في رسالة الواتساب.'),
-('prod-playstation-card', 'بطاقات بلايستيشن ستور (PlayStation Network PSN)', 'playstation-network-cards', 'cat-game-cards', 'بطاقات المتاجر (ستور)', 'packages', 10.50, 'بطاقات تعبئة رصيد متجر بلايستيشن للأجهزة PS4 و PS5.', 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=800&q=80', 'active', 'code', 'إرسال الكود فوراً عبر واتساب', '["كود رقمي أصلي", "ريجون أمريكي / سعودي"]'::jsonb, '["كود رسمي صالح للاستخدام فوراً", "صلاحية الكود دائمة ولا تنتهي"]'::jsonb, 'حدد الريجون المطلوب عند إرسال الطلب.'),
-('prod-canva-pro', 'اشتراك كانفا برو (Canva Pro) - تفعيل على إيميلك الشخصي', 'canva-pro-subscription', 'cat-ai-tools', 'أدوات الذكاء الاصطناعي', 'packages', 4.99, 'احصل على اشتراك كانفا برو الرسمي لتصميم إبداعي بدون قيود. تفعيل مباشر على بريدك.', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80', 'active', 'instant', 'تفعيل خلال 5 دقائق', '["على إيميلك الشخصي", "ضمان كامل المدة"]'::jsonb, '["وصول كامل لمكتبة التصاميم والصور", "أدوات الذكاء الاصطناعي Magic Studio", "تخزين سحابي 1 تيرابايت"]'::jsonb, 'أرسل بريدك المسجل في كانفا عبر واتساب.'),
-('prod-chatgpt-plus', 'اشتراك شات جي بي تي بلس (ChatGPT Plus) - GPT-4o', 'chatgpt-plus-subscription', 'cat-ai-tools', 'أدوات الذكاء الاصطناعي', 'standard', 21.50, 'حساب رسمي مفعل باشتراك ChatGPT Plus يتيح لك أحدث نماذج GPT-4o وتوليد الصور DALL-E 3.', 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80', 'active', 'instant', 'تسليم بيانات الحساب خلال دقيقتين', '["حساب خاص", "ضمان 30 يوم"]'::jsonb, '["وصول غير محدود لـ GPT-4o", "تخصيص نماذج GPTs", "تسليم فوري للمعلومات"]'::jsonb, NULL),
-('prod-telegram-premium', 'اشتراك تيليجرام بريميوم (Telegram Premium)', 'telegram-premium', 'cat-entertainment', 'ترفيه وموسيقى', 'packages', 3.50, 'ترقية حسابك الشخصي على تيليجرام لميزات بريميوم الخارقة عبر الإهداء الرسمي.', 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?auto=format&fit=crop&w=800&q=80', 'active', 'instant', 'إهداء مباشر لمعرف اليوزر @username خلال دقائق', '["إهداء رسمي Gift", "بدون تسجيل دخول"]'::jsonb, '["بدون طلب كلمة المرور", "رفع ملفات حتى 4GB", "نجمة بريميوم مميزة"]'::jsonb, 'أرسل لنا معرف التلغرام الخاص بك @username.'),
-('prod-windows-11-pro', 'مفتاح تنشيط ويندوز 11 برو (Windows 11 Pro Retail Key)', 'windows-11-pro-license', 'cat-software', 'برمجيات ومفاتيح ويندوز', 'standard', 7.90, 'مفتاح ترخيص أصلي لتفعيل نظام Windows 11 Pro مدى الحياة لجهاز كمبيوتر واحد.', 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=800&q=80', 'active', 'code', 'تسليم فوري للكود والتعليمات', '["تفعيل أصلي مدى الحياة", "تحديثات مايكروسوفت"]'::jsonb, '["مفتاح Retail يرتبط باللوحة الأم", "يدعم 64 بت و 32 بت", "ترقية مباشرة من هوم إلى برو"]'::jsonb, NULL),
-('prod-steam-wallet', 'بطاقات رصيد ستيم (Steam Wallet Gift Cards)', 'steam-wallet-cards', 'cat-game-cards', 'بطاقات المتاجر (ستور)', 'packages', 5.50, 'أكواد شحن محفظة ستيم الأصلية لشراء أحدث ألعاب الكمبيوتر والأدوات الرقمية.', 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80', 'active', 'code', 'إرسال الكود خلال دقائق', '["كود عالمي Global", "تعبئة فورية"]'::jsonb, '["كود رسمي يقبل التعبئة على كافة حسابات ستيم"]'::jsonb, NULL),
-('prod-netflix-uhd', 'اشتراك نتفلكس بريميوم بدقة 4K Ultra HD', 'netflix-premium-4k', 'cat-entertainment', 'ترفيه وموسيقى', 'packages', 3.99, 'استمتع بأحدث الأفلام والمسلسلات الحصرية على منصة نتفلكس بأعلى جودة عرض 4K.', 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&w=800&q=80', 'out_of_stock', 'instant', 'التسليم الفوري متوقف مؤقتاً', '["نفد مؤقتاً", "جودة 4K UHD"]'::jsonb, '["ملف شخصي خاص محمي برمز PIN", "دعم كامل للترجمة والدبلجة العربية"]'::jsonb, NULL)
+('prod-pubg-uc', 'شدات ببجي موبايل (PUBG UC) - شحن مباشر بالـ ID', 'pubg-mobile-uc', 'cat-pubg', 'شدات ببجي موبايل', 'packages', 0.99, 'شحن شدات ببجي موبايل العالمية رسمياً ومباشرة عن طريق معرف اللاعب (Player ID). يتم تنفيذ الطلب والتسليم عبر واتساب فور تأكيد التحويل.', 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80', 'active', 'instant', 'تسليم سريع ومباشر عبر واتساب', '["الأكثر مبيعاً 🔥", "تسليم مباشر"]'::jsonb, '["شحن رسمي معتمد 100%", "لا نحتاج كلمة المرور، فقط الـ Player ID", "دعم كافة الدول والحسابات العالمية"]'::jsonb, 'يرجى تزويدنا برقم الآيدي (Player ID) واسمك داخل اللعبة في رسالة الواتساب.'),
+('prod-playstation-card', 'بطاقات بلايستيشن ستور (PlayStation Network PSN)', 'playstation-network-cards', 'cat-game-cards', 'بطاقات المتاجر (ستور)', 'packages', 10.50, 'بطاقات تعبئة رصيد متجر بلايستيشن للأجهزة PS4 و PS5.', 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=800&q=80', 'active', 'code', 'إرسال الكود عبر واتساب بعد التحويل', '["كود رقمي أصلي", "ريجون أمريكي / سعودي"]'::jsonb, '["كود رسمي صالح للاستخدام فوراً", "صلاحية الكود دائمة ولا تنتهي"]'::jsonb, 'حدد الريجون المطلوب عند إرسال الطلب.'),
+('prod-canva-pro', 'اشتراك كانفا برو (Canva Pro) - تفعيل على إيميلك الشخصي', 'canva-pro-subscription', 'cat-ai-tools', 'أدوات الذكاء الاصطناعي', 'packages', 4.99, 'احصل على اشتراك كانفا برو الرسمي لتصميم إبداعي بدون قيود. تفعيل مباشر على بريدك.', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80', 'active', 'instant', 'تفعيل سريع عبر واتساب خلال دقائق', '["على إيميلك الشخصي", "ضمان كامل المدة"]'::jsonb, '["وصول كامل لمكتبة التصاميم والصور", "أدوات الذكاء الاصطناعي Magic Studio", "تخزين سحابي 1 تيرابايت"]'::jsonb, 'أرسل بريدك المسجل في كانفا عبر واتساب.'),
+('prod-chatgpt-plus', 'اشتراك شات جي بي تي بلس (ChatGPT Plus) - GPT-4o', 'chatgpt-plus-subscription', 'cat-ai-tools', 'أدوات الذكاء الاصطناعي', 'standard', 21.50, 'حساب رسمي مفعل باشتراك ChatGPT Plus يتيح لك أحدث نماذج GPT-4o وتوليد الصور DALL-E 3.', 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80', 'active', 'instant', 'تسليم بيانات الحساب عبر واتساب مباشرة', '["حساب خاص", "ضمان 30 يوم"]'::jsonb, '["وصول غير محدود لـ GPT-4o", "تخصيص نماذج GPTs", "تسليم فوري للمعلومات"]'::jsonb, NULL),
+('prod-telegram-premium', 'اشتراك تيليجرام بريميوم (Telegram Premium)', 'telegram-premium', 'cat-entertainment', 'ترفيه وموسيقى', 'packages', 3.50, 'ترقية حسابك الشخصي على تيليجرام لميزات بريميوم الخارقة عبر الإهداء الرسمي.', 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?auto=format&fit=crop&w=800&q=80', 'active', 'instant', 'إهداء مباشر لمعرف اليوزر @username عبر واتساب', '["إهداء رسمي Gift", "بدون تسجيل دخول"]'::jsonb, '["بدون طلب كلمة المرور", "رفع ملفات حتى 4GB", "نجمة بريميوم مميزة"]'::jsonb, 'أرسل لنا معرف التلغرام الخاص بك @username.'),
+('prod-windows-11-pro', 'مفتاح تنشيط ويندوز 11 برو (Windows 11 Pro Retail Key)', 'windows-11-pro-license', 'cat-software', 'برمجيات ومفاتيح ويندوز', 'standard', 7.90, 'مفتاح ترخيص أصلي لتفعيل نظام Windows 11 Pro مدى الحياة لجهاز كمبيوتر واحد.', 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=800&q=80', 'active', 'code', 'تسليم سريع للكود والتعليمات في واتساب', '["تفعيل أصلي مدى الحياة", "تحديثات مايكروسوفت"]'::jsonb, '["مفتاح Retail يرتبط باللوحة الأم", "يدعم 64 بت و 32 بت", "ترقية مباشرة من هوم إلى برو"]'::jsonb, NULL),
+('prod-steam-wallet', 'بطاقات رصيد ستيم (Steam Wallet Gift Cards)', 'steam-wallet-cards', 'cat-game-cards', 'بطاقات المتاجر (ستور)', 'packages', 5.50, 'أكواد شحن محفظة ستيم الأصلية لشراء أحدث ألعاب الكمبيوتر والأدوات الرقمية.', 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80', 'active', 'code', 'إرسال الكود عبر واتساب بعد التحويل', '["كود عالمي Global", "تعبئة موثوقة"]'::jsonb, '["كود رسمي يقبل التعبئة على كافة حسابات ستيم"]'::jsonb, NULL),
+('prod-netflix-uhd', 'اشتراك نتفلكس بريميوم بدقة 4K Ultra HD', 'netflix-premium-4k', 'cat-entertainment', 'ترفيه وموسيقى', 'packages', 3.99, 'استمتع بأحدث الأفلام والمسلسلات الحصرية على منصة نتفلكس بأعلى جودة عرض 4K.', 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?auto=format&fit=crop&w=800&q=80', 'out_of_stock', 'instant', 'التسليم متوقف مؤقتاً', '["نفد مؤقتاً", "جودة 4K UHD"]'::jsonb, '["ملف شخصي خاص محمي برمز PIN", "دعم كامل للترجمة والدبلجة العربية"]'::jsonb, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- الباقات
@@ -214,34 +226,43 @@ INSERT INTO packages (id, product_id, name, base_price_usd, quantity_label, sort
 ('pkg-nf-3m', 'prod-netflix-uhd', 'اشتراك 3 أشهر', 10.50, '3 أشهر', 2, NULL, false)
 ON CONFLICT (id) DO NOTHING;
 
--- سلايدر العروض
+-- سلايدر العروض الرئيسية
 INSERT INTO slider_images (id, title, subtitle, image_url, button_text, link_url, sort_order, tag) VALUES
-('slide-1', 'شحن شدات ببجي بأرخص الأسعار الرسمية', 'تسليم فوري مباشر للآيدي ID الخاص بك خلال ثوانٍ معدودة وبدون كلمة مرور', 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1600&q=85', 'اشحن الآن عبر واتساب', '#products', 1, 'عرض خاص وحصري 🔥'),
-('slide-2', 'اشتراكات كانفا برو والذكاء الاصطناعي', 'أطلق العنان لإبداعك مع حسابات رسمية ومضمونة كامل المدة بأسعار رمزية', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=85', 'تصفح باقات الذكاء الاصطناعي', '#products', 2, 'تفعيل فوري على إيميلك ⭐'),
-('slide-3', 'بطاقات الهدايا والمتاجر العالمية', 'بلايستيشن، إكس بوكس، آيتونز، وستيم بأكواد رقمية أصلية موثوقة 100%', 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=1600&q=85', 'استكشف بطاقات الألعاب', '#products', 3, 'أكواد رسمية وأصلية 🎮')
+('slide-1', 'شحن شدات ببجي بأرخص الأسعار الرسمية', 'تسليم سريع ومباشر للآيدي ID الخاص بك بعد إتمام الطلب عبر واتساب وبدون الحاجة لكلمة المرور', 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1600&q=85', 'اشحن الآن عبر واتساب', '#products', 1, 'عرض خاص وحصري 🔥'),
+('slide-2', 'اشتراكات كانفا برو والذكاء الاصطناعي', 'أطلق العنان لإبداعك مع حسابات رسمية ومضمونة كامل المدة بأسعار رمزية مع تفعيل فوري عبر واتساب', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1600&q=85', 'تصفح باقات الذكاء الاصطناعي', '#products', 2, 'تفعيل سريع على إيميلك ⭐'),
+('slide-3', 'بطاقات الهدايا والمتاجر العالمية', 'بلايستيشن، إكس بوكس، آيتونز، وستيم بأكواد رقمية أصلية موثوقة 100% وتسليم فوري عبر واتساب', 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=1600&q=85', 'استكشف بطاقات الألعاب', '#products', 3, 'أكواد رسمية وأصلية 🎮')
+ON CONFLICT (id) DO NOTHING;
+
+-- سلايدر الإعلانات المستمر أسفل المنتجات
+INSERT INTO ad_banners (id, title, subtitle, image_url, badge, link_url, sort_order) VALUES
+('ad-1', 'عروض شحن ببجي موبايل', 'خصم 20% إضافي عند طلب رويال باس المزدوج عبر واتساب', 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80', 'عرض خاص 🔥', '#products-section', 1),
+('ad-2', 'اشتراكات كانفا برو السنوية', 'وفر حتى 60% مع اشتراكات كانفا برو الأصلية مدى الحياة', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80', 'توفير مذهل ⭐', '#products-section', 2),
+('ad-3', 'بطاقات بلايستيشن وألعاب الكمبيوتر', 'أكواد أمريكية وسعودية جاهزة للإرسال الفوري بعد التحويل', 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=600&q=80', 'تسليم فوري 🎮', '#products-section', 3),
+('ad-4', 'تراخيص مايكروسوفت الأصلية', 'ويندوز 11 برو وأوفيس أصلي مع ضمان التنشيط مدى الحياة', 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80', 'ضمان دائم ⚡', '#products-section', 4),
+('ad-5', 'اشتراكات تيليجرام بريميوم', 'ترقية فورية عبر إهداء المعرف بدون كلمة مرور خلال دقائق', 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?auto=format&fit=crop&w=600&q=80', 'بدون كلمة سر 💎', '#products-section', 5)
 ON CONFLICT (id) DO NOTHING;
 
 -- شريط الأخبار
 INSERT INTO news_items (id, message, type) VALUES
-('news-1', '⚡ عروض نهاية الأسبوع: خصومات حصرية تصل حتى 30% على شدات ببجي وبطاقات بلايستيشن ستور!', 'promo'),
-('news-2', '🚀 تم تفعيل الشحن المباشر الآلي لاشتراكات تيليجرام بريميوم وكانفا برو خلال دقائق عبر واتساب.', 'info'),
+('news-1', '⚡ عروض خاصة: خصومات حصرية على شدات ببجي وبطاقات بلايستيشن ستور عبر واتساب!', 'promo'),
+('news-2', '🚀 يتم تسليم كافة الطلبات وتفعيل الحسابات سريعاً ومباشرة بعد التحويل البنكي أو المحفظة الإلكترونية.', 'info'),
 ('news-3', '💡 أسعار الصرف للعملات (الدولار، الليرة التركية، الليرة السورية) يتم تحديثها ومزامنتها أولاً بأول.', 'alert')
 ON CONFLICT (id) DO NOTHING;
 
 -- الأسئلة الشائعة
 INSERT INTO faqs (id, question, answer, category, sort_order) VALUES
-('faq-1', 'كيف تتم عملية الشراء والدفع عبر المتجر؟', 'اختر المنتج أو الباقة المطلوبة واضغط على "اطلب عبر واتساب". سيتم نقلك تلقائياً لتطبيق واتساب مع تفاصيل طلبك بدقة، وسيقوم فريق الدعم الفني بالرد الفوري لتأكيد وسيلة الدفع المناسبة لك وإرسال طلبك فوراً.', 'الشراء والدفع', 1),
-('faq-2', 'كم يستغرق استلام الكود أو تفعيل الاشتراك؟', 'معظم منتجاتنا ذات تسليم فوري! بالنسبة لشدات ببجي والأكواد الرقمية يتم التسليم خلال 1 إلى 5 دقائق. ولتفعيل اشتراكات الإيميل خلال أقل من 10 دقائق.', 'التسليم', 2),
+('faq-1', 'كيف تتم عملية الشراء والدفع عبر المتجر؟', 'اختر المنتج أو الباقة المطلوبة واضغط على "اطلب عبر واتساب". سيتم نقلك تلقائياً لتطبيق واتساب مع تفاصيل طلبك بدقة، وسيقوم فريق الدعم الفني بالرد الفوري لتأكيد وسيلة الدفع المناسبة لك وإرسال طلبك فوراً بعد التحويل.', 'الشراء والدفع', 1),
+('faq-2', 'كم يستغرق استلام الكود أو تفعيل الاشتراك؟', 'يتم التسليم سريعاً ومباشرة فور التحويل! بالنسبة لشدات ببجي والأكواد الرقمية يتم التسليم عادةً خلال 1 إلى 5 دقائق من تأكيد التحويل. ولتفعيل اشتراكات الإيميل خلال أقل من 10 دقائق.', 'التسليم', 2),
 ('faq-3', 'هل المنتجات والاشتراكات أصلية ومضمونة؟', 'نعم بالتأكيد! جميع أكوادنا واشتراكاتنا معتمدة 100%، ونقدم ضماناً ذهبياً كاملاً طوال مدة الاشتراك مع استبدال فوري في حال أي عائق.', 'الضمان والموثوقية', 3),
 ('faq-4', 'ما هي العملات المدعومة وكيف يتم احتساب السعر؟', 'يدعم متجرنا التحويل الفوري بين 3 عملات: الدولار الأمريكي (USD)، الليرة التركية (TRY)، والليرة السورية (SYP). اختر العملة في أعلى الصفحة وستتحول كافة الأسعار فوراً.', 'العملات والأسعار', 4)
 ON CONFLICT (id) DO NOTHING;
 
--- إعدادات المتجر
-INSERT INTO settings (id, store_name, store_tagline, whatsapp_number, whatsapp_prefix, working_hours) VALUES
-('default_settings', 'ديجيتال زون | DigitalZone', 'المتجر الأول للبطاقات والاشتراكات والمنتجات الرقمية الفورية', '905521234567', 'مرحباً ديجيتال زون! أرغب في إتمام طلب المنتج الرقمي التالي:', 'خدمة العملاء متوفرة 24/7 - تسليم فوري للمنتجات')
+-- إعدادات المتجر الافتراضية
+INSERT INTO settings (id, store_name, store_tagline, whatsapp_number, whatsapp_prefix, working_hours, admin_email, admin_password) VALUES
+('default_settings', 'ديجيتال زون | DigitalZone', 'المتجر الأول للبطاقات والاشتراكات والمنتجات الرقمية مع الدفع والتسليم عبر واتساب', '905521234567', 'مرحباً ديجيتال زون! أرغب في إتمام طلب المنتج الرقمي التالي:', 'خدمة العملاء متوفرة 24/7 - تسليم سريع ومباشر', 'admin@store.com', 'admin123456')
 ON CONFLICT (id) DO NOTHING;
 
--- أسعار الصرف
+-- أسعار الصرف الافتراضية
 INSERT INTO currency_rates (id, base_currency, mode, try_rate, syp_rate) VALUES
 ('default_rates', 'USD', 'manual', 34.25, 14800.00)
 ON CONFLICT (id) DO NOTHING;
