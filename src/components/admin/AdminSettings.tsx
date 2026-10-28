@@ -4,6 +4,7 @@ import { saveStoreSettings } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
 import ImageUploadField from './ImageUploadField';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import { extractApiEndpointAndKey } from '../../lib/currency';
 import { PaymentMethod } from '../../types';
 import {
   MessageCircle,
@@ -320,34 +321,85 @@ export default function AdminSettings() {
           </p>
         </div>
 
+        {/* Quick Presets */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setForm({
+                ...form,
+                currency_api_endpoint: 'https://api.freecurrencyapi.com/v1/latest',
+                currency_api_key: 'fca_live_nhQtnaXKjy4Qwr8rZXfENRhq86eRD1iggbkNRBfT',
+              });
+              showToast('تم تعيين إعدادات FreeCurrencyAPI مع مفتاحك بنجاح!', 'success');
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 font-bold text-xs border border-cyan-500/30 transition-all cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>تطبيق FreeCurrencyAPI مع مفتاحك الحي</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setForm({
+                ...form,
+                currency_api_endpoint: 'https://open.er-api.com/v6/latest/USD',
+                currency_api_key: '',
+              });
+              showToast('تم تعيين مزود Open Exchange Rates (مجاني)', 'info');
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 transition-all cursor-pointer"
+          >
+            <span>استعادة المزود المجاني (Open.er-api)</span>
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs text-slate-300 font-bold block mb-1">
               رابط نقطة النهاية (Currency API Endpoint URL)
             </label>
             <input
-              type="url"
-              placeholder="https://open.er-api.com/v6/latest/USD"
-              value={form.currency_api_endpoint || 'https://open.er-api.com/v6/latest/USD'}
-              onChange={(e) => setForm({ ...form, currency_api_endpoint: e.target.value })}
+              type="text"
+              placeholder="https://api.freecurrencyapi.com/v1/latest"
+              value={form.currency_api_endpoint || 'https://api.freecurrencyapi.com/v1/latest'}
+              onChange={(e) => {
+                const { endpoint, apiKey: cleanKey } = extractApiEndpointAndKey(e.target.value, form.currency_api_key);
+                setForm({
+                  ...form,
+                  currency_api_endpoint: endpoint,
+                  currency_api_key: cleanKey || form.currency_api_key,
+                });
+              }}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none"
             />
             <span className="text-[10px] text-slate-400 mt-1 block">
-              الافتراضي المجاني: https://open.er-api.com/v6/latest/USD
+              رابط الخدمة المباشر لجلب أسعار الصرف
             </span>
           </div>
 
           <div>
             <label className="text-xs text-slate-300 font-bold block mb-1">
-              مفتاح الـ API (API Key) - اختياري
+              مفتاح الـ API (API Key)
             </label>
             <input
               type="text"
-              placeholder="اتركه فارغاً إذا كان الـ API مجانياً بدون مفتاح"
+              placeholder="fca_live_..."
               value={form.currency_api_key || ''}
-              onChange={(e) => setForm({ ...form, currency_api_key: e.target.value })}
+              onChange={(e) => {
+                const { endpoint, apiKey: cleanKey } = extractApiEndpointAndKey(form.currency_api_endpoint, e.target.value);
+                setForm({
+                  ...form,
+                  currency_api_key: cleanKey,
+                  currency_api_endpoint: endpoint || form.currency_api_endpoint,
+                });
+              }}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-cyan-500 focus:outline-none"
             />
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              يتم إرساله كـ apikey في الهيدر والطلب تلقائياً
+            </span>
           </div>
         </div>
       </div>

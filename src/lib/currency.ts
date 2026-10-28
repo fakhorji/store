@@ -83,45 +83,175 @@ export function formatCurrencyPrice(
 }
 
 /**
- * Fetch live exchange rates from configured or public API (USD to TRY, etc.)
+ * Parse any raw API endpoint or curl command into clean URL and API Key
  */
-export async function fetchLiveExchangeRates(customEndpoint?: string, apiKey?: string): Promise<{
+export function extractApiEndpointAndKey(
+  rawEndpoint?: string,
+  rawKey?: string
+): { endpoint: string; apiKey: string } {
+  let endpoint = (rawEndpoint || '').trim();
+  let apiKey = (rawKey || '').trim();
+
+  // If the user pasted a curl command like:
+  // curl -H "apikey: fca_live_..." "https://api.freecurrencyapi.com/v1/latest"
+  if (endpoint.toLowerCase().includes('curl')) {
+    const urlMatch = endpoint.match(/https?:\/\/[^\s"']+/);
+    if (urlMatch) {
+      endpoint = urlMatch[0];
+    }
+    const keyMatch = endpoint.match(/(?:apikey|key|token)[:\s="']+([a-zA-Z0-9_\-]+)/i);
+    if (keyMatch && !apiKey) {
+      apiKey = keyMatch[1];
+    }
+  }
+
+  // Also check if user pasted a curl command into the key field by mistake
+  if (apiKey.toLowerCase().includes('curl')) {
+    const keyMatch = apiKey.match(/(?:apikey|key|token)[:\s="']+([a-zA-Z0-9_\-]+)/i);
+    if (keyMatch) {
+      apiKey = keyMatch[1];
+    }
+  }
+
+  // If URL contains apikey query parameter, extract it if apiKey is empty
+  if (endpoint.includes('apikey=') || endpoint.includes('api_key=')) {
+    try {
+      const parsedUrl = new URL(endpoint);
+      const extracted = parsedUrl.searchParams.get('apikey') || parsedUrl.searchParams.get('api_key');
+      if (extracted && !apiKey) {
+        apiKey = extracted;
+      }
+    } catch {}
+  }
+
+  // Remove any surrounding quotes
+  endpoint = endpoint.replace(/^["']|["']$/g, '').trim();
+  apiKey = apiKey.replace(/^["']|["']$/g, '').trim();
+
+  if (!endpoint) {
+    endpoint = 'https://open.er-api.com/v6/latest/USD';
+  }
+
+  return { endpoint, apiKey };
+}
+
+/**
+ * Fetch live exchange rates from configured or public API (USD to TRY, etc.)
+ * Supports:
+ * - FreeCurrencyAPI (data.data) with header or query apikey
+ * - Open Exchange Rates / Open.er-api (data.rates)
+ * - ExchangeRate-API (data.conversion_rates)
+ * - Currencylayer (data.quotes)
+ */
+export async function fetchLiveExchangeRates(
+  customEndpoint?: string,
+  apiKeyParam?: string
+): Promise<{
   tryRate?: number;
   sypRate?: number;
   allRates?: Record<string, number>;
+  ratesCount?: number;
   success: boolean;
   source: string;
+  errorMessage?: string;
 }> {
   try {
-    let url = customEndpoint && customEndpoint.trim() ? customEndpoint.trim() : 'https://open.er-api.com/v6/latest/USD';
-    if (apiKey && apiKey.trim()) {
-      if (url.includes('?')) {
-        url += `&apikey=${encodeURIComponent(apiKey.trim())}`;
-      } else {
-        url += `?apikey=${encodeURIComponent(apiKey.trim())}`;
+    const { endpoint, apiKey } = extractApiEndpointAndKey(customEndpoint, apiKeyParam);
+
+    let requestUrl = endpoint;
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+    };
+
+    if (apiKey) {
+      // 1. Pass in headers as FreeCurrencyAPI requests: -H "apikey: <key>"
+      headers['apikey'] = apiKey;
+      headers['Authorization'] = `Bearer ${apiKey}`;
+
+      // 2. Also append as query param for APIs that require it in query string
+      if (!requestUrl.includes('apikey=') && !requestUrl.includes('api_key=')) {
+        const separator = requestUrl.includes('?') ? '&' : '?';
+        requestUrl = `${requestUrl}${separator}apikey=${encodeURIComponent(apiKey)}`;
       }
     }
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('فشل جلب أسعار الصرف من الخادم');
-    const data = await res.json();
-    const rates = data.rates || data.conversion_rates;
-    if (rates) {
-      const tryRate = rates.TRY ? Number(Number(rates.TRY).toFixed(2)) : undefined;
-      const sypRate = rates.SYP ? Number(Number(rates.SYP).toFixed(0)) : undefined;
-      return {
-        tryRate,
-        sypRate,
-        allRates: rates,
-        success: true,
-        source: customEndpoint ? 'Custom Currency API' : 'Open Exchange Rates API',
-      };
+
+    const res = await fetch(requestUrl, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!res.ok) {
+      let errorDetail = `خطأ HTTP (${res.status} ${res.statusText})`;
+      try {
+        const errJson = await res.json();
+        if (errJson.message) errorDetail += `: ${errJson.message}`;
+        else if (errJson.errors) errorDetail += `: ${JSON.stringify(errJson.errors)}`;
+      } catch {}
+      throw new Error(errorDetail);
     }
-    throw new Error('بيانات الأسعار غير متوفرة في الاستجابة');
+
+    const json = await res.json();
+
+    // Resolve rates from various API formats:
+    // 1) FreeCurrencyAPI format: { data: { "TRY": 34.25, "EUR": 0.92 } }
+    // 2) Standard format: { rates: { "TRY": 34.25 } }
+    // 3) ExchangeRate-API v6: { conversion_rates: { "TRY": 34.25 } }
+    // 4) Currencylayer: { quotes: { "USDTRY": 34.25 } }
+    let rawRates: Record<string, any> | undefined;
+
+    if (json.data && typeof json.data === 'object' && !Array.isArray(json.data)) {
+      rawRates = json.data;
+    } else if (json.rates && typeof json.rates === 'object' && !Array.isArray(json.rates)) {
+      rawRates = json.rates;
+    } else if (json.conversion_rates && typeof json.conversion_rates === 'object') {
+      rawRates = json.conversion_rates;
+    } else if (json.quotes && typeof json.quotes === 'object') {
+      rawRates = {};
+      for (const [key, val] of Object.entries(json.quotes)) {
+        const cleanKey = key.replace(/^USD/, '');
+        rawRates[cleanKey] = val;
+      }
+    } else if (typeof json === 'object' && !Array.isArray(json)) {
+      rawRates = json;
+    }
+
+    if (!rawRates || Object.keys(rawRates).length === 0) {
+      throw new Error('تم استلام الرد بنجاح ولكن لم يتم العثور على حقل أسعار العملات (data أو rates)');
+    }
+
+    // Sanitize rates to numbers
+    const cleanRates: Record<string, number> = {};
+    for (const [k, v] of Object.entries(rawRates)) {
+      const num = Number(v);
+      if (!isNaN(num) && num > 0) {
+        cleanRates[k.toUpperCase()] = num;
+      }
+    }
+
+    const ratesCount = Object.keys(cleanRates).length;
+    const tryRate = cleanRates.TRY ? Number(cleanRates.TRY.toFixed(2)) : undefined;
+    const sypRate = cleanRates.SYP ? Number(cleanRates.SYP.toFixed(0)) : undefined;
+
+    // Detect provider name
+    let provider = 'مزود مخصص';
+    if (endpoint.includes('freecurrencyapi.com')) provider = 'FreeCurrencyAPI (نشط)';
+    else if (endpoint.includes('er-api.com')) provider = 'Open Exchange Rates (مجاني)';
+    else if (endpoint.includes('exchangerate-api.com')) provider = 'ExchangeRate-API';
+
+    return {
+      tryRate,
+      sypRate,
+      allRates: cleanRates,
+      ratesCount,
+      success: true,
+      source: provider,
+    };
   } catch (err: any) {
     console.warn('Live exchange rates API fetch error', err);
     return {
       success: false,
       source: 'خطأ في الاتصال بالـ API',
+      errorMessage: err?.message || 'تعذر الاتصال بمزود أسعار العملات، تحقق من الرابط والمفتاح',
     };
   }
 }
