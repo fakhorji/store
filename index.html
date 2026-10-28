@@ -13,6 +13,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+      // Automatic fallback for GitHub Pages when root directory is selected
+      if (window.location.hostname.includes('github.io') && !window.location.pathname.includes('/docs')) {
+        var target = window.location.origin + window.location.pathname.replace(/\/+$/, '') + '/docs/';
+        window.location.replace(target);
+      }
+    </script>
   </head>
   <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased font-['Cairo',sans-serif] selection:bg-amber-500 selection:text-white transition-colors duration-200">
     <div id="root"></div>
