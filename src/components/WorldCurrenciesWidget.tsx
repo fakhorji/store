@@ -162,13 +162,17 @@ export default function WorldCurrenciesWidget() {
           })}
         </div>
 
-        {/* Bottom Note */}
-        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
-          <div className="flex items-center gap-1.5">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-            <span>يتم جلب هذه البيانات وتحديثها عبر API أسعار العملات المخصص والمضبوط في لوحة الإدارة</span>
+        {/* Bottom Helpful Note - Clean & Customer Friendly */}
+        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-emerald-500 shrink-0" />
+            <span className="font-medium text-slate-600 dark:text-slate-300">
+              الأسعار استرشادية ومحدثة لحظة بلحظة لمساعدتكم في معرفة قيمة الطلب بعملتكم المحلية بكل شفافية قبل الشراء
+            </span>
           </div>
-          <span>الأسعار استرشادية ومحدثة لحظة بلحظة</span>
+          <span className="text-amber-500 font-bold text-[11px]">
+            الأسعار استرشادية ومحدثة لحظة بلحظة ✦
+          </span>
         </div>
       </div>
     </section>

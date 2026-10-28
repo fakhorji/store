@@ -208,7 +208,7 @@ export default function AdminCurrency() {
         </h5>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
           <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700">
-            <span className="text-[11px] text-slate-400 block mb-1">المبلغ التجريبي بالدولار:</span>
+            <span className="text-[11px] text-slate-400 block mb-1">المبلغ بالدولار المراد حسابه:</span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-white">$</span>
               <input

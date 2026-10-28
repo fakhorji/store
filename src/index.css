@@ -55,21 +55,27 @@
   animation-play-state: paused;
 }
 
-/* Seamless infinite marquee to the right for ad slider */
-@keyframes marquee-scroll-right {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(100%); }
+/* Seamless infinite marquee to the right for ad slider - True Continuous Vortex */
+@keyframes continuous-vortex-right {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0%, 0, 0);
+  }
 }
 
-.animate-marquee-track {
+.animate-vortex-track {
   display: flex;
   width: max-content;
-  animation: marquee-scroll-right 30s linear infinite;
+  animation: continuous-vortex-right 85s linear infinite;
+  will-change: transform;
 }
 
-.animate-marquee-track:hover {
+.animate-vortex-track:hover {
   animation-play-state: paused;
 }
+
 
 /* Royal Golden Shimmer & Glow Animations */
 @keyframes royal-shimmer {
