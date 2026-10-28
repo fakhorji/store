@@ -1,5 +1,5 @@
 import { useStore } from '../context/StoreContext';
-import { Flame, ArrowLeft, Sparkles } from 'lucide-react';
+import { Flame, Sparkles } from 'lucide-react';
 import { useMemo } from 'react';
 
 export default function ContinuousAdSlider() {
@@ -30,63 +30,73 @@ export default function ContinuousAdSlider() {
   };
 
   // Render a single ad card with adaptive image container responsive to any aspect ratio
-  const renderCard = (banner: (typeof activeBanners)[0], keySuffix: string | number) => (
-    <div
-      key={`${banner.id}-${keySuffix}`}
-      onClick={() => handleBannerClick(banner.link_url)}
-      className="group relative h-48 sm:h-56 md:h-60 min-w-[240px] sm:min-w-[300px] max-w-[460px] rounded-2xl overflow-hidden shrink-0 cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 border border-slate-200/80 dark:border-slate-800 bg-slate-950 flex flex-col justify-between"
-      dir="rtl"
-    >
-      {/* Responsive Background / Image Container: handles square, portrait, 16:9, or banners */}
-      <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-slate-950">
-        {/* Ambient blurred backdrop matching the image colors */}
-        <div
-          className="absolute inset-0 bg-cover bg-center scale-125 filter blur-lg opacity-35 transition-transform duration-700 group-hover:scale-135"
-          style={{ backgroundImage: `url(${banner.image_url})` }}
-        />
+  const renderCard = (banner: (typeof activeBanners)[0], keySuffix: string | number) => {
+    const hasTitle = Boolean(banner.title && banner.title.trim().length > 0);
+    const hasSubtitle = Boolean(banner.subtitle && banner.subtitle.trim().length > 0);
+    const hasBadge = Boolean(banner.badge && banner.badge.trim().length > 0);
+    const hasTextContent = hasTitle || hasSubtitle;
 
-        {/* Crisp foreground image that respects its natural aspect ratio */}
-        <img
-          src={banner.image_url}
-          alt={banner.title}
-          className="relative z-1 max-h-full max-w-full w-auto h-full object-contain mx-auto group-hover:scale-105 transition-transform duration-700 ease-out"
-          loading="lazy"
-        />
+    return (
+      <div
+        key={`${banner.id}-${keySuffix}`}
+        onClick={() => handleBannerClick(banner.link_url)}
+        className="group relative h-48 sm:h-56 md:h-60 min-w-[240px] sm:min-w-[300px] max-w-[460px] rounded-2xl overflow-hidden shrink-0 cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 border border-slate-200/80 dark:border-slate-800 bg-slate-950 flex flex-col justify-between"
+        dir="rtl"
+      >
+        {/* Responsive Background / Image Container: handles square, portrait, 16:9, or banners */}
+        <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-slate-950">
+          {/* Ambient blurred backdrop matching the image colors */}
+          <div
+            className="absolute inset-0 bg-cover bg-center scale-125 filter blur-lg opacity-35 transition-transform duration-700 group-hover:scale-135"
+            style={{ backgroundImage: `url(${banner.image_url})` }}
+          />
 
-        {/* Vignette gradient overlays to guarantee typography readability */}
-        <div className="absolute inset-0 z-2 bg-gradient-to-t from-slate-950/95 via-slate-950/45 to-transparent pointer-events-none" />
-        <div className="absolute inset-0 z-2 bg-gradient-to-r from-slate-950/40 via-transparent to-transparent pointer-events-none" />
-      </div>
+          {/* Crisp foreground image that respects its natural aspect ratio */}
+          <img
+            src={banner.image_url}
+            alt={banner.title || 'إعلان ترويجي'}
+            className="relative z-1 max-h-full max-w-full w-auto h-full object-contain mx-auto group-hover:scale-105 transition-transform duration-700 ease-out"
+            loading="lazy"
+          />
 
-      {/* Badge at Top Right */}
-      {banner.badge && (
-        <div className="absolute top-3 right-3 z-10">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-[11px] shadow-md backdrop-blur-sm">
-            <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-            <span>{banner.badge}</span>
-          </span>
+          {/* Subtle gradient overlays only if text content exists */}
+          {hasTextContent && (
+            <>
+              <div className="absolute inset-0 z-2 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 z-2 bg-gradient-to-r from-slate-950/30 via-transparent to-transparent pointer-events-none" />
+            </>
+          )}
         </div>
-      )}
 
-      {/* Content Info at Bottom */}
-      <div className="absolute bottom-0 inset-x-0 p-3.5 sm:p-4 z-10 text-right">
-        <h5 className="font-black text-sm sm:text-base text-white leading-snug line-clamp-1 drop-shadow-md group-hover:text-amber-400 transition-colors">
-          {banner.title}
-        </h5>
-
-        {banner.subtitle && (
-          <p className="text-[11px] sm:text-xs text-slate-300 line-clamp-1 mt-0.5 font-medium">
-            {banner.subtitle}
-          </p>
+        {/* Optional Badge at Top Right */}
+        {hasBadge && (
+          <div className="absolute top-3 right-3 z-10">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-[11px] shadow-md backdrop-blur-sm">
+              <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+              <span>{banner.badge}</span>
+            </span>
+          </div>
         )}
 
-        <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black text-amber-400 mt-2 opacity-90 group-hover:opacity-100 group-hover:translate-x-[-3px] transition-all">
-          <span>اطلب العرض الآن</span>
-          <ArrowLeft className="w-3.5 h-3.5 transition-transform" />
-        </div>
+        {/* Optional Content Info at Bottom - Only rendered if user actually provided text */}
+        {hasTextContent && (
+          <div className="absolute bottom-0 inset-x-0 p-3.5 sm:p-4 z-10 text-right">
+            {hasTitle && (
+              <h5 className="font-black text-sm sm:text-base text-white leading-snug line-clamp-1 drop-shadow-md group-hover:text-amber-400 transition-colors">
+                {banner.title}
+              </h5>
+            )}
+
+            {hasSubtitle && (
+              <p className="text-[11px] sm:text-xs text-slate-300 line-clamp-1 mt-0.5 font-medium">
+                {banner.subtitle}
+              </p>
+            )}
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <section className="py-8 overflow-hidden select-none" dir="rtl">

@@ -91,7 +91,7 @@ export interface SliderImage {
 
 export interface AdBanner {
   id: string;
-  title: string;
+  title?: string;
   subtitle?: string;
   image_url: string;
   link_url?: string;

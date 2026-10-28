@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS slider_images (
 -- 4.1 جدول سلايدر الإعلانات المستمر (Continuous Ad Banners)
 CREATE TABLE IF NOT EXISTS ad_banners (
   id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
+  title TEXT,
   subtitle TEXT,
   image_url TEXT NOT NULL,
   badge TEXT,
