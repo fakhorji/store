@@ -254,13 +254,13 @@ INSERT INTO slider_images (id, title, subtitle, image_url, button_text, link_url
 ('slide-3', 'بطاقات الهدايا والمتاجر العالمية', 'بلايستيشن، إكس بوكس، آيتونز، وستيم بأكواد رقمية أصلية موثوقة 100% وتسليم فوري عبر واتساب', 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=1600&q=85', 'استكشف بطاقات الألعاب', '#products', 3, 'أكواد رسمية وأصلية 🎮')
 ON CONFLICT (id) DO NOTHING;
 
--- سلايدر الإعلانات المستمر أسفل المنتجات
+-- سلايدر الإعلانات المستمر أسفل المنتجات (بدون نصوص إجبارية - صور نظيفة فقط)
 INSERT INTO ad_banners (id, title, subtitle, image_url, badge, link_url, sort_order) VALUES
-('ad-1', 'عروض شحن ببجي موبايل', 'خصم 20% إضافي عند طلب رويال باس المزدوج عبر واتساب', 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80', 'عرض خاص 🔥', '#products-section', 1),
-('ad-2', 'اشتراكات كانفا برو السنوية', 'وفر حتى 60% مع اشتراكات كانفا برو الأصلية مدى الحياة', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80', 'توفير مذهل ⭐', '#products-section', 2),
-('ad-3', 'بطاقات بلايستيشن وألعاب الكمبيوتر', 'أكواد أمريكية وسعودية جاهزة للإرسال الفوري بعد التحويل', 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=600&q=80', 'تسليم فوري 🎮', '#products-section', 3),
-('ad-4', 'تراخيص مايكروسوفت الأصلية', 'ويندوز 11 برو وأوفيس أصلي مع ضمان التنشيط مدى الحياة', 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80', 'ضمان دائم ⚡', '#products-section', 4),
-('ad-5', 'اشتراكات تيليجرام بريميوم', 'ترقية فورية عبر إهداء المعرف بدون كلمة مرور خلال دقائق', 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?auto=format&fit=crop&w=600&q=80', 'بدون كلمة سر 💎', '#products-section', 5)
+('ad-1', '', '', 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80', '', '#products-section', 1),
+('ad-2', '', '', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80', '', '#products-section', 2),
+('ad-3', '', '', 'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?auto=format&fit=crop&w=600&q=80', '', '#products-section', 3),
+('ad-4', '', '', 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80', '', '#products-section', 4),
+('ad-5', '', '', 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?auto=format&fit=crop&w=600&q=80', '', '#products-section', 5)
 ON CONFLICT (id) DO NOTHING;
 
 -- شريط الأخبار
