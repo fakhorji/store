@@ -1,0 +1,6 @@
+{
+  "name": "متجر المنتجات والبطاقات الرقمية",
+  "description": "منصة التجارة الإلكترونية المتكاملة للمنتجات الرقمية والبطاقات والاشتراكات مع الشراء السريع عبر واتساب ودعم العملات المتعددة",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
