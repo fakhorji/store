@@ -53,6 +53,9 @@ export default function Header() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const rawLogo = settings.logo_url || (typeof window !== 'undefined' ? localStorage.getItem('dz_store_logo') : '') || '';
+  const currentLogo = rawLogo && typeof rawLogo === 'string' && rawLogo.trim() !== '' ? rawLogo.trim() : null;
+
   return (
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors" dir="rtl">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
@@ -67,8 +70,19 @@ export default function Header() {
               }}
               className="flex items-center gap-2 text-right group focus:outline-none"
             >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-md shadow-amber-500/20 shrink-0 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-md shadow-amber-500/20 shrink-0 group-hover:scale-105 transition-transform overflow-hidden p-0.5">
+                {currentLogo ? (
+                  <img
+                    src={currentLogo}
+                    alt={settings.store_name || 'الشعار'}
+                    className="w-full h-full object-contain rounded-lg bg-slate-900/10 dark:bg-slate-900/40 p-0.5"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+                )}
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="font-black text-xs sm:text-base tracking-tight text-slate-900 dark:text-white leading-tight truncate max-w-[120px] sm:max-w-none">

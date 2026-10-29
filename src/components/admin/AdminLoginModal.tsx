@@ -47,8 +47,19 @@ export default function AdminLoginModal() {
           </button>
 
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center shadow-lg shadow-amber-500/20 mb-3">
-              <Shield className="w-7 h-7" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-950 flex items-center justify-center shadow-lg shadow-amber-500/20 mb-3 overflow-hidden p-1">
+              {settings?.logo_url && settings.logo_url.trim() ? (
+                <img
+                  src={settings.logo_url.trim()}
+                  alt="الشعار"
+                  className="w-full h-full object-contain rounded-xl bg-slate-900/40 p-0.5"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <Shield className="w-7 h-7" />
+              )}
             </div>
             <h3 className="text-xl font-black text-white">
               بوابة تسجيل دخول المدير

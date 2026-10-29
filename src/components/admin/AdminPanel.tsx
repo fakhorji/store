@@ -44,6 +44,7 @@ export default function AdminPanel() {
     categories,
     sliders,
     adBanners,
+    settings,
     logoutAdmin,
     refreshData,
   } = useStore();
@@ -83,8 +84,19 @@ export default function AdminPanel() {
         <div className="bg-slate-900 border-b border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shrink-0 gap-2">
           {/* Brand & Title */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-slate-950 font-black shadow-md shrink-0">
-              <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 flex items-center justify-center text-slate-950 font-black shadow-md shrink-0 overflow-hidden p-0.5">
+              {settings?.logo_url && settings.logo_url.trim() ? (
+                <img
+                  src={settings.logo_url.trim()}
+                  alt="شعار لوحة التحكم"
+                  className="w-full h-full object-contain rounded-lg bg-slate-950/40 p-0.5"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+              )}
             </div>
             <div className="min-w-0">
               <h2 className="text-xs sm:text-base font-extrabold text-white flex items-center gap-1.5 truncate">

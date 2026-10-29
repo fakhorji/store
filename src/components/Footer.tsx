@@ -70,8 +70,19 @@ export default function Footer() {
           {/* Col 1: Brand & Bio (4 cols) */}
           <div className="lg:col-span-4 space-y-3.5">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-md shadow-amber-500/20 shrink-0">
-                <Sparkles className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-md shadow-amber-500/20 shrink-0 overflow-hidden p-0.5">
+                {settings.logo_url && settings.logo_url.trim() ? (
+                  <img
+                    src={settings.logo_url.trim()}
+                    alt={settings.store_name || 'الشعار'}
+                    className="w-full h-full object-contain rounded-lg bg-slate-900/40 p-0.5"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <Sparkles className="w-5 h-5" />
+                )}
               </div>
               <div>
                 <span className="font-black text-base text-white block">
