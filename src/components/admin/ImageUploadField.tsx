@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { Upload, Link as LinkIcon, Image as ImageIcon, X, Check } from 'lucide-react';
+import { Upload, Link as LinkIcon, Image as ImageIcon, X, Loader2 } from 'lucide-react';
+import { compressImageFile } from '../../utils/imageCompressor';
 
 interface ImageUploadFieldProps {
   label: string;
@@ -15,25 +16,30 @@ export default function ImageUploadField({
   required = false,
 }: ImageUploadFieldProps) {
   const [mode, setMode] = useState<'upload' | 'url'>('upload');
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('حجم الصورة كبير جداً، يرجى اختيار صورة أقل من 5 ميغابايت');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      if (base64) {
-        onChange(base64);
+    setErrorMsg('');
+    setIsCompressing(true);
+    try {
+      // Automatically resize & compress on canvas down to ~30-50KB with high quality
+      const compressed = await compressImageFile(file, 1200, 800, 0.82);
+      if (compressed) {
+        onChange(compressed);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      setErrorMsg('تعذر معالجة الصورة، يرجى تجربة صورة أخرى');
+    } finally {
+      setIsCompressing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   return (
@@ -93,12 +99,25 @@ export default function ImageUploadField({
           />
           <button
             type="button"
+            disabled={isCompressing}
             onClick={() => fileInputRef.current?.click()}
-            className="w-full p-3 rounded-xl border border-dashed border-slate-700 hover:border-amber-500 bg-slate-800/60 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 text-xs text-slate-300 font-bold"
+            className="w-full p-3 rounded-xl border border-dashed border-slate-700 hover:border-amber-500 bg-slate-800/60 hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 text-xs text-slate-300 font-bold disabled:opacity-50"
           >
-            <Upload className="w-4 h-4 text-amber-500" />
-            <span>اضغط هنا لاختيار صورة من جهازك</span>
+            {isCompressing ? (
+              <>
+                <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                <span className="text-amber-400">جاري معالجة وضغط الصورة بجودة عالية...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 text-amber-500" />
+                <span>اضغط هنا لاختيار صورة من جهازك (يتم ضغطها وتحسينها تلقائياً)</span>
+              </>
+            )}
           </button>
+          {errorMsg && (
+            <p className="text-[11px] text-rose-400 mt-1 font-medium">{errorMsg}</p>
+          )}
         </div>
       )}
 

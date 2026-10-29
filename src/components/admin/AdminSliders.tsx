@@ -5,13 +5,15 @@ import { saveSlider, deleteSlider } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
 import ImageUploadField from './ImageUploadField';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
-import { Plus, Edit2, Trash2, Image, X, ExternalLink } from 'lucide-react';
+import { Plus, Edit2, Trash2, Image, X, ExternalLink, Loader2 } from 'lucide-react';
+import { compressImageBase64 } from '../../utils/imageCompressor';
 
 export default function AdminSliders() {
   const { sliders, setSliders } = useStore();
   const { showToast } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editing, setEditing] = useState<SliderImage | null>(null);
 
   // Delete modal state
@@ -81,33 +83,46 @@ export default function AdminSliders() {
       return;
     }
 
-    const itemToSave: SliderImage = {
-      id: form.id || `slide-${Date.now().toString().slice(-6)}`,
-      title: form.title,
-      subtitle: form.subtitle || '',
-      image_url: form.image_url,
-      button_text: form.button_text || 'اطلب الآن',
-      link_url: form.link_url || '#products',
-      sort_order: form.sort_order || 1,
-      is_active: form.is_active !== undefined ? form.is_active : true,
-      tag: form.tag || '',
-    };
-
-    // Instant optimistic update
-    setSliders((prev) => {
-      const idx = prev.findIndex((s) => s.id === itemToSave.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = itemToSave;
-        return copy;
+    setIsSaving(true);
+    try {
+      let finalImageUrl = form.image_url.trim();
+      if (finalImageUrl.startsWith('data:image/') && finalImageUrl.length > 50000) {
+        finalImageUrl = await compressImageBase64(finalImageUrl, 1200, 800, 0.82);
       }
-      return [...prev, itemToSave];
-    });
 
-    setIsModalOpen(false);
-    showToast('تم حفظ شريحة العرض فوراً! ⚡', 'success');
+      const itemToSave: SliderImage = {
+        id: form.id || `slide-${Date.now().toString().slice(-6)}`,
+        title: form.title,
+        subtitle: form.subtitle || '',
+        image_url: finalImageUrl,
+        button_text: form.button_text || 'اطلب الآن',
+        link_url: form.link_url || '#products',
+        sort_order: form.sort_order || 1,
+        is_active: form.is_active !== undefined ? form.is_active : true,
+        tag: form.tag || '',
+      };
 
-    saveSlider(itemToSave).catch((err) => console.error('Save slider error', err));
+      await saveSlider(itemToSave);
+
+      // Instant optimistic update
+      setSliders((prev) => {
+        const idx = prev.findIndex((s) => s.id === itemToSave.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = itemToSave;
+          return copy;
+        }
+        return [...prev, itemToSave];
+      });
+
+      setIsModalOpen(false);
+      showToast('تم حفظ شريحة العرض بنجاح! ⚡', 'success');
+    } catch (err) {
+      console.error('Save slider error', err);
+      showToast('حدث خطأ أثناء حفظ شريحة العرض', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -260,16 +275,25 @@ export default function AdminSliders() {
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-700">
                 <button
                   type="button"
+                  disabled={isSaving}
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white disabled:opacity-50"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md"
+                  disabled={isSaving}
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  حفظ الشريحة
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                      <span>جاري الحفظ...</span>
+                    </>
+                  ) : (
+                    <span>حفظ الشريحة</span>
+                  )}
                 </button>
               </div>
             </form>
