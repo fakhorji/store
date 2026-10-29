@@ -99,14 +99,12 @@ export function compressImageBase64(
         let width = img.naturalWidth || img.width;
         let height = img.naturalHeight || img.height;
 
-        if (width <= maxWidth && height <= maxHeight) {
-          resolve(base64);
-          return;
+        // Calculate ratio to downscale dimensions if larger than maxWidth/maxHeight
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.max(1, Math.round(width * ratio));
+          height = Math.max(1, Math.round(height * ratio));
         }
-
-        const ratio = Math.min(maxWidth / width, maxHeight / height);
-        width = Math.max(1, Math.round(width * ratio));
-        height = Math.max(1, Math.round(height * ratio));
 
         const canvas = document.createElement('canvas');
         canvas.width = width;

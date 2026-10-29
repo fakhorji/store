@@ -106,10 +106,7 @@ export default function AdminAdBanners() {
         is_active: form.is_active !== undefined ? form.is_active : true,
       };
 
-      // Save directly to Supabase and cache
-      await saveAdBanner(itemToSave);
-
-      // Instant state update in UI
+      // 1. Update state in React context first so UI reflects instantly
       setAdBanners((prev) => {
         const idx = prev.findIndex((a) => a.id === itemToSave.id);
         if (idx >= 0) {
@@ -122,6 +119,11 @@ export default function AdminAdBanners() {
 
       setIsModalOpen(false);
       showToast('تم حفظ الإعلان الترويجي بنجاح! ⚡', 'success');
+
+      // 2. Save to Supabase and storage in background asynchronously
+      saveAdBanner(itemToSave).catch((err) => {
+        console.error('Save ad banner database error', err);
+      });
     } catch (err: any) {
       console.error('Save ad banner error', err);
       showToast('حدث خطأ أثناء حفظ الإعلان، يرجى المحاولة ثانية', 'error');

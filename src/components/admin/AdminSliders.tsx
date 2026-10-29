@@ -102,9 +102,7 @@ export default function AdminSliders() {
         tag: form.tag || '',
       };
 
-      await saveSlider(itemToSave);
-
-      // Instant optimistic update
+      // 1. Instant optimistic update in React context
       setSliders((prev) => {
         const idx = prev.findIndex((s) => s.id === itemToSave.id);
         if (idx >= 0) {
@@ -117,6 +115,11 @@ export default function AdminSliders() {
 
       setIsModalOpen(false);
       showToast('تم حفظ شريحة العرض بنجاح! ⚡', 'success');
+
+      // 2. Background database upsert
+      saveSlider(itemToSave).catch((err) => {
+        console.error('Save slider database error', err);
+      });
     } catch (err) {
       console.error('Save slider error', err);
       showToast('حدث خطأ أثناء حفظ شريحة العرض', 'error');
