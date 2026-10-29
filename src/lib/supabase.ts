@@ -41,28 +41,7 @@ const STORAGE_KEYS = {
 // In-memory cache to guarantee zero storage quota crashes and instant UI updates
 const memoryCache: Record<string, any> = {};
 
-function sanitizeForStorage<T>(value: T): any {
-  if (!value) return value;
-  try {
-    const rawStr = JSON.stringify(value);
-    // If entire payload is under 80KB, save as is
-    if (rawStr.length < 80 * 1024) {
-      return value;
-    }
-    // If large payload (e.g. uploaded base64 banner images), strip out huge base64 image strings from localStorage copy
-    // Full images remain 100% intact in memoryCache, React state, and Supabase!
-    return JSON.parse(rawStr, (_key, val) => {
-      if (typeof val === 'string' && val.startsWith('data:image/') && val.length > 5000) {
-        return '';
-      }
-      return val;
-    });
-  } catch {
-    return value;
-  }
-}
-
-// Safe local storage helpers with In-Memory fallback & QuotaExceeded recovery
+// Safe local storage helpers with In-Memory fallback
 function getLocal<T>(key: string, fallback: T): T {
   if (memoryCache[key] !== undefined) {
     return memoryCache[key] as T;
@@ -85,23 +64,18 @@ function setLocal<T>(key: string, value: T): void {
   // 1. Always store the full pristine data in memoryCache first
   memoryCache[key] = value;
 
-  // 2. Attempt safe localStorage persistence with quota handling
+  // 2. Attempt safe localStorage persistence
   try {
-    const sanitized = sanitizeForStorage(value);
-    localStorage.setItem(key, JSON.stringify(sanitized));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch (e: any) {
-    // If QuotaExceededError occurs, gracefully clean up large cached images
+    // If QuotaExceededError occurs, gracefully warn without breaking the app
     if (
       e?.name === 'QuotaExceededError' ||
       e?.code === 22 ||
       e?.code === 1014 ||
       e?.number === -2147024882
     ) {
-      try {
-        localStorage.removeItem(STORAGE_KEYS.AD_BANNERS);
-        localStorage.removeItem(STORAGE_KEYS.SLIDERS);
-        localStorage.removeItem(STORAGE_KEYS.PRODUCTS);
-      } catch {}
+      console.warn(`localStorage quota exceeded for ${key}`);
     }
   }
 }
@@ -540,10 +514,6 @@ export async function deleteSlider(id: string): Promise<boolean> {
 // Continuous Ad Banners (سلايدر الإعلانات المستمر)
 // -------------------------------------------------------------
 export async function getAdBanners(): Promise<AdBanner[]> {
-  // If cached in memory, return immediately for instant UI
-  if (memoryCache[STORAGE_KEYS.AD_BANNERS] && Array.isArray(memoryCache[STORAGE_KEYS.AD_BANNERS])) {
-    return memoryCache[STORAGE_KEYS.AD_BANNERS];
-  }
   try {
     const { data, error } = await supabase
       .from('ad_banners')
