@@ -193,17 +193,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [currencySettings, setCurrencySettings] = useState<CurrencySettings>(getInitialCurrencySettings);
   const [worldRates, setWorldRates] = useState<Record<string, number>>({});
 
-  // Only display full loading screen if we have zero products in memory and cache
-  const [isLoading, setIsLoading] = useState<boolean>(() => {
-    const cachedProds = getInitialProducts();
-    return !cachedProds || cachedProds.length === 0;
-  });
+  // Smooth initial loading screen with store logo
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Safety timeout: never block the user on a loading screen for more than 600ms
+  // Safety timeout: smooth transition after initial data load (max 500ms)
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 600);
+    }, 500);
     return () => clearTimeout(timer);
   }, []);
 
