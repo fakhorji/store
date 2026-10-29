@@ -9,17 +9,18 @@ export default function ContinuousAdSlider() {
     [adBanners]
   );
 
-  if (activeBanners.length === 0) return null;
-
   // Build a rich set of banners so that a single group is at least 8 items long
   // This guarantees seamless rendering on all screens up to 4K without premature ending
   const groupBanners = useMemo(() => {
+    if (activeBanners.length === 0) return [];
     let items = [...activeBanners];
     while (items.length < 8) {
       items = [...items, ...activeBanners];
     }
     return items;
   }, [activeBanners]);
+
+  if (activeBanners.length === 0) return null;
 
   const handleBannerClick = (link?: string) => {
     if (link) {
