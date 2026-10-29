@@ -68,7 +68,7 @@ export default function AdminLoginModal() {
                 <input
                   type="email"
                   required
-                  placeholder="admin@store.com"
+                  placeholder="البريد الإلكتروني"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl pr-10 pl-3.5 py-2.5 text-xs text-white focus:border-amber-500 focus:outline-none font-mono"

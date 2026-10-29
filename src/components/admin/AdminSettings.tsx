@@ -489,7 +489,8 @@ export default function AdminSettings() {
             <input
               type="email"
               required
-              value={form.admin_email || 'admin@store.com'}
+              placeholder="بريد المدير الإلكتروني"
+              value={form.admin_email || ''}
               onChange={(e) => setForm({ ...form, admin_email: e.target.value })}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-amber-500 focus:outline-none"
             />
@@ -502,7 +503,8 @@ export default function AdminSettings() {
             <input
               type="text"
               required
-              value={form.admin_password || 'admin123456'}
+              placeholder="كلمة مرور الدخول للوحة التحكم"
+              value={form.admin_password || ''}
               onChange={(e) => setForm({ ...form, admin_password: e.target.value })}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-amber-500 focus:outline-none"
             />

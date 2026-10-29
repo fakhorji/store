@@ -186,6 +186,14 @@ export function getInitialSettings(): StoreSettings {
     if (savedLogo) {
       s.logo_url = savedLogo;
     }
+    const savedEmail = localStorage.getItem('dz_admin_email');
+    if (savedEmail && savedEmail.trim()) {
+      s.admin_email = savedEmail.trim();
+    }
+    const savedPass = localStorage.getItem('dz_admin_password');
+    if (savedPass && savedPass.trim()) {
+      s.admin_password = savedPass.trim();
+    }
   } catch {}
   if (!s.payment_methods || !Array.isArray(s.payment_methods)) {
     s.payment_methods = [];
@@ -202,12 +210,21 @@ export function getInitialCurrencySettings(): CurrencySettings {
 // -------------------------------------------------------------
 export async function getStoreSettings(): Promise<StoreSettings> {
   try {
-    const { data, error } = await supabase.from('settings').select('*').limit(1).maybeSingle();
-    if (!error && data) {
+    const { data, error } = await supabase.from('settings').select('*');
+    if (!error && data && data.length > 0) {
+      const defaultData = data.find((d: any) => d.id === 'default_settings') || data[0];
+      const authData = data.find((d: any) => d.id === 'admin_auth');
+
+      // Admin credentials saved in Supabase admin_auth row (or default_settings / localStorage)
+      const adminEmail = (authData?.support_email || defaultData?.admin_email || defaultData?.support_email || localStorage.getItem('dz_admin_email') || '').trim();
+      const adminPassword = (authData?.notice_text || defaultData?.admin_password || localStorage.getItem('dz_admin_password') || '').trim();
+
       const merged: StoreSettings = {
         ...INITIAL_SETTINGS,
-        ...data,
-        payment_methods: Array.isArray(data.payment_methods) ? data.payment_methods : [],
+        ...defaultData,
+        admin_email: adminEmail,
+        admin_password: adminPassword,
+        payment_methods: Array.isArray(defaultData.payment_methods) ? defaultData.payment_methods : [],
       };
       setLocal(STORAGE_KEYS.SETTINGS, merged);
       if (merged.store_name) {
@@ -218,6 +235,16 @@ export async function getStoreSettings(): Promise<StoreSettings> {
       if (merged.logo_url) {
         try {
           localStorage.setItem('dz_store_logo', merged.logo_url);
+        } catch {}
+      }
+      if (adminEmail) {
+        try {
+          localStorage.setItem('dz_admin_email', adminEmail);
+        } catch {}
+      }
+      if (adminPassword) {
+        try {
+          localStorage.setItem('dz_admin_password', adminPassword);
         } catch {}
       }
       return merged;
@@ -240,9 +267,18 @@ export async function saveStoreSettings(settings: StoreSettings): Promise<boolea
       localStorage.setItem('dz_store_logo', settings.logo_url);
     } catch {}
   }
+  if (settings.admin_email) {
+    try {
+      localStorage.setItem('dz_admin_email', settings.admin_email.trim());
+    } catch {}
+  }
+  if (settings.admin_password) {
+    try {
+      localStorage.setItem('dz_admin_password', settings.admin_password.trim());
+    } catch {}
+  }
 
   try {
-    // Strip client-only credentials so PostgREST doesn't reject with "Could not find column"
     const { admin_email, admin_password, ...dbSettings } = settings as any;
     const payload = {
       id: 'default_settings',
@@ -250,23 +286,18 @@ export async function saveStoreSettings(settings: StoreSettings): Promise<boolea
       payment_methods: settings.payment_methods || [],
       updated_at: new Date().toISOString(),
     };
-    const { error } = await supabase.from('settings').upsert([payload]);
-    if (error) {
-      console.warn('Full settings upsert returned error, executing safe fallback upsert:', error.message);
-      // Safe fallback ensuring payment_methods and core settings are always saved
-      const safePayload = {
-        id: 'default_settings',
-        store_name: settings.store_name,
-        store_tagline: settings.store_tagline,
-        whatsapp_number: settings.whatsapp_number,
-        whatsapp_prefix: settings.whatsapp_prefix,
-        logo_url: settings.logo_url,
-        payment_methods: settings.payment_methods || [],
-        currency_api_endpoint: settings.currency_api_endpoint,
-        currency_api_key: settings.currency_api_key,
+    await supabase.from('settings').upsert([payload]);
+
+    // Save admin credentials directly into Supabase in row 'admin_auth' so user can see and change it from the database table!
+    if (admin_email || admin_password) {
+      await supabase.from('settings').upsert({
+        id: 'admin_auth',
+        store_name: 'حساب المدير',
+        store_tagline: 'بيانات تسجيل الدخول للوحة التحكم',
+        support_email: (admin_email || '').trim(),
+        notice_text: (admin_password || '').trim(),
         updated_at: new Date().toISOString(),
-      };
-      await supabase.from('settings').upsert([safePayload]);
+      });
     }
     return true;
   } catch (err) {

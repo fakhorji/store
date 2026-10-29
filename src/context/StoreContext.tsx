@@ -160,10 +160,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loginAdmin = (email: string, pass: string): boolean => {
-    const targetEmail = (settings.admin_email || 'admin@store.com').trim().toLowerCase();
-    const targetPass = (settings.admin_password || 'admin123456').trim();
+    const targetEmail = (settings.admin_email || localStorage.getItem('dz_admin_email') || '').trim().toLowerCase();
+    const targetPass = (settings.admin_password || localStorage.getItem('dz_admin_password') || '').trim();
 
-    if (email.trim().toLowerCase() === targetEmail && pass.trim() === targetPass) {
+    if (targetEmail && targetPass && email.trim().toLowerCase() === targetEmail && pass.trim() === targetPass) {
       setIsAdminLoggedIn(true);
       localStorage.setItem('dz_admin_session', 'true');
       setIsAdminLoginModalOpen(false);
