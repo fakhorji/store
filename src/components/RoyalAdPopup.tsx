@@ -72,6 +72,8 @@ export default function RoyalAdPopup({ forceShow = false, onClosePreview }: Roya
 
   if (!isOpen) return null;
 
+  const popupImage = settings.popup_ad_image?.trim();
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" dir="rtl">
@@ -106,21 +108,21 @@ export default function RoyalAdPopup({ forceShow = false, onClosePreview }: Roya
           </button>
 
           {/* Image Container with Ambient blur */}
-          {settings.popup_ad_image && (
+          {popupImage ? (
             <div className="relative w-full h-48 sm:h-56 bg-slate-950 overflow-hidden">
               <div
                 className="absolute inset-0 bg-cover bg-center scale-110 filter blur-md opacity-40"
-                style={{ backgroundImage: `url(${settings.popup_ad_image})` }}
+                style={{ backgroundImage: `url(${popupImage})` }}
               />
               <img
-                src={settings.popup_ad_image}
+                src={popupImage}
                 alt={settings.popup_ad_title || 'عرض ملكي'}
                 className="relative z-1 w-full h-full object-cover"
                 loading="eager"
               />
               <div className="absolute inset-0 z-2 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
             </div>
-          )}
+          ) : null}
 
           {/* Body Content */}
           <div className="p-6 sm:p-7 relative z-10 text-right space-y-4">

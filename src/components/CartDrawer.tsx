@@ -127,11 +127,17 @@ export default function CartDrawer() {
                       key={item.cartItemId}
                       className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 flex gap-3 relative"
                     >
-                      <img
-                        src={item.product.image_url}
-                        alt={item.product.name}
-                        className="w-16 h-16 rounded-xl object-cover bg-slate-950 shrink-0"
-                      />
+                      {item.product.image_url && item.product.image_url.trim() ? (
+                        <img
+                          src={item.product.image_url.trim()}
+                          alt={item.product.name}
+                          className="w-16 h-16 rounded-xl object-cover bg-slate-950 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
+                          <ShoppingCart className="w-6 h-6 opacity-40" />
+                        </div>
+                      )}
 
                       <div className="flex-1 flex flex-col justify-between">
                         <div>

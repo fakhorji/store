@@ -111,11 +111,17 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               {/* Image */}
               <div className="md:col-span-5 relative rounded-2xl overflow-hidden aspect-[4/3] md:aspect-square bg-slate-950 shadow-md">
-                <img
-                  src={product.image_url}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
+                {product.image_url && product.image_url.trim() ? (
+                  <img
+                    src={product.image_url.trim()}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-600">
+                    <ShoppingBag className="w-12 h-12 opacity-30" />
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
                 <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between text-xs text-white">
                   <span className="px-2.5 py-1 rounded-md bg-emerald-600/90 font-bold backdrop-blur-sm flex items-center gap-1">

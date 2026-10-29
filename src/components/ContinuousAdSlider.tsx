@@ -4,7 +4,10 @@ import { useMemo } from 'react';
 
 export default function ContinuousAdSlider() {
   const { adBanners } = useStore();
-  const activeBanners = useMemo(() => adBanners.filter((b) => b.is_active), [adBanners]);
+  const activeBanners = useMemo(
+    () => adBanners.filter((b) => b.is_active && typeof b.image_url === 'string' && b.image_url.trim().length > 0),
+    [adBanners]
+  );
 
   if (activeBanners.length === 0) return null;
 
@@ -35,6 +38,7 @@ export default function ContinuousAdSlider() {
     const hasSubtitle = Boolean(banner.subtitle && banner.subtitle.trim().length > 0);
     const hasBadge = Boolean(banner.badge && banner.badge.trim().length > 0);
     const hasTextContent = hasTitle || hasSubtitle;
+    const imgUrl = banner.image_url?.trim();
 
     return (
       <div
@@ -44,12 +48,16 @@ export default function ContinuousAdSlider() {
         dir="rtl"
       >
         {/* Crisp foreground image that dictates the container's exact width (1:1 square, 4:3, 16:9, etc.) */}
-        <img
-          src={banner.image_url}
-          alt={banner.title || 'إعلان ترويجي'}
-          className="h-48 sm:h-56 md:h-60 w-auto max-w-none block object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-          loading="lazy"
-        />
+        {imgUrl ? (
+          <img
+            src={imgUrl}
+            alt={banner.title || 'إعلان ترويجي'}
+            className="h-48 sm:h-56 md:h-60 w-auto max-w-none block object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+            loading="lazy"
+          />
+        ) : (
+          <div className="h-48 sm:h-56 md:h-60 w-48 bg-slate-800 flex items-center justify-center text-slate-500" />
+        )}
 
         {/* Subtle bottom gradient overlay only when text content exists */}
         {hasTextContent && (

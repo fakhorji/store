@@ -22,6 +22,7 @@ import {
   Flame,
 } from 'lucide-react';
 import RoyalAdPopup from '../RoyalAdPopup';
+import SyrianNewFlag from '../icons/SyrianNewFlag';
 
 export default function AdminSettings() {
   const { settings, setSettings } = useStore();
@@ -50,8 +51,15 @@ export default function AdminSettings() {
 
     // Instant optimistic update
     setSettings(form);
-    localStorage.setItem('dz_store_name', form.store_name);
-    showToast('تم حفظ وتطبيق كافة إعدادات المتجر فوراً! ⚡', 'success');
+    try {
+      localStorage.setItem('dz_store_name', form.store_name);
+      if (form.logo_url) {
+        localStorage.setItem('dz_store_logo', form.logo_url);
+      } else {
+        localStorage.removeItem('dz_store_logo');
+      }
+    } catch {}
+    showToast('تم حفظ وتطبيق كافة إعدادات المتجر وشعار التحميل فوراً! ⚡', 'success');
 
     try {
       await saveStoreSettings(form);
@@ -62,23 +70,38 @@ export default function AdminSettings() {
     }
   };
 
-  const handleTogglePaymentMethod = (id: string) => {
+  const handleTogglePaymentMethod = async (id: string) => {
     const currentMethods = form.payment_methods || [];
     const updated = currentMethods.map((pm) =>
       pm.id === id ? { ...pm, is_active: !pm.is_active } : pm
     );
-    setForm({ ...form, payment_methods: updated });
+    const updatedForm = { ...form, payment_methods: updated };
+    setForm(updatedForm);
+    setSettings(updatedForm);
+    showToast('تم تحديث حالة وسيلة الدفع وحفظها فوراً ⚡', 'info');
+    try {
+      await saveStoreSettings(updatedForm);
+    } catch (e) {
+      console.warn('Payment method toggle save error', e);
+    }
   };
 
-  const confirmDeletePaymentMethod = () => {
+  const confirmDeletePaymentMethod = async () => {
     const currentMethods = form.payment_methods || [];
     const updated = currentMethods.filter((pm) => pm.id !== deleteModal.paymentId);
-    setForm({ ...form, payment_methods: updated });
+    const updatedForm = { ...form, payment_methods: updated };
+    setForm(updatedForm);
+    setSettings(updatedForm);
     setDeleteModal({ isOpen: false, paymentId: '', paymentName: '' });
-    showToast('تم حذف وسيلة الدفع بنجاح', 'info');
+    showToast('تم حذف وسيلة الدفع وحفظ التغيير بنجاح', 'info');
+    try {
+      await saveStoreSettings(updatedForm);
+    } catch (e) {
+      console.warn('Payment method delete save error', e);
+    }
   };
 
-  const handleAddPaymentMethod = () => {
+  const handleAddPaymentMethod = async () => {
     if (!newPaymentName.trim()) {
       showToast('يرجى كتابة اسم وسيلة الدفع', 'error');
       return;
@@ -91,13 +114,20 @@ export default function AdminSettings() {
       is_active: true,
       sort_order: (form.payment_methods?.length || 0) + 1,
     };
-    setForm({
+    const updatedForm = {
       ...form,
       payment_methods: [...(form.payment_methods || []), newMethod],
-    });
+    };
+    setForm(updatedForm);
+    setSettings(updatedForm);
     setNewPaymentName('');
     setNewPaymentDesc('');
-    showToast('تمت إضافة وسيلة الدفع الجديدة', 'success');
+    showToast('تمت إضافة وسيلة الدفع وحفظها في قاعدة البيانات فوراً! ⚡', 'success');
+    try {
+      await saveStoreSettings(updatedForm);
+    } catch (e) {
+      console.warn('Payment method add save error', e);
+    }
   };
 
   return (
@@ -135,9 +165,19 @@ export default function AdminSettings() {
               type="text"
               required
               value={form.store_name}
-              onChange={(e) => setForm({ ...form, store_name: e.target.value })}
+              onChange={(e) => {
+                const val = e.target.value;
+                setForm({ ...form, store_name: val });
+                try {
+                  localStorage.setItem('dz_store_name', val);
+                  document.title = val ? `${val} | المتجر الرقمي` : 'المتجر الرقمي';
+                } catch {}
+              }}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-amber-500 focus:outline-none"
             />
+            <span className="text-[10px] text-amber-400 mt-1 block">
+              يتم تغيير اسم المتجر تلقائياً في كامل المتجر وعلى شاشة التحميل فوراً ⚡
+            </span>
           </div>
         </div>
 
@@ -170,9 +210,18 @@ export default function AdminSettings() {
 
         <div>
           <ImageUploadField
-            label="شعار المتجر (Logo) - اختياري"
+            label="شعار المتجر (Logo) - يظهر في الهيدر وشاشة التحميل"
             value={form.logo_url || ''}
-            onChange={(logo) => setForm({ ...form, logo_url: logo })}
+            onChange={(logo) => {
+              setForm({ ...form, logo_url: logo });
+              try {
+                if (logo) {
+                  localStorage.setItem('dz_store_logo', logo);
+                } else {
+                  localStorage.removeItem('dz_store_logo');
+                }
+              } catch {}
+            }}
           />
         </div>
 
@@ -328,6 +377,22 @@ export default function AdminSettings() {
             onClick={() => {
               setForm({
                 ...form,
+                currency_api_endpoint: 'https://api-v2.sp-today.com/api/v1/currencies',
+                currency_api_key: '68570c175d4bb0612a8d193ec475a005',
+              });
+              showToast('تم تعيين منصة SP-Today السورية (الليرة اليوم) ومفتاحك بنجاح! 🇸🇾', 'success');
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+          >
+            <SyrianNewFlag className="w-4 h-3 rounded-xs" />
+            <span>تطبيق منصة SP-Today (الليرة السورية والتركية المباشرة) 🇸🇾</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setForm({
+                ...form,
                 currency_api_endpoint: 'https://api.freecurrencyapi.com/v1/latest',
                 currency_api_key: 'fca_live_nhQtnaXKjy4Qwr8rZXfENRhq86eRD1iggbkNRBfT',
               });
@@ -336,7 +401,7 @@ export default function AdminSettings() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 font-bold text-xs border border-cyan-500/30 transition-all cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>تطبيق FreeCurrencyAPI مع مفتاحك الحي</span>
+            <span>تطبيق FreeCurrencyAPI مع مفتاحك الحي 🌐</span>
           </button>
 
           <button

@@ -19,11 +19,7 @@ export default function AdminLoginModal() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      loginAdmin(email, password);
-      setLoading(false);
-    }, 400);
+    loginAdmin(email, password);
   };
 
   return (

@@ -138,6 +138,8 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 -- ترقية جدول الإعدادات بإضافة كافة الأعمدة الحديثة إن كانت الجداول موجودة مسبقاً
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS admin_email TEXT DEFAULT 'admin@store.com';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS admin_password TEXT DEFAULT 'admin123456';
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS currency_api_endpoint TEXT DEFAULT 'https://open.er-api.com/v6/latest/USD';
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS currency_api_key TEXT;
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS payment_methods JSONB DEFAULT '[]'::jsonb;

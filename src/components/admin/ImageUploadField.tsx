@@ -103,9 +103,9 @@ export default function ImageUploadField({
       )}
 
       {/* Image Preview Thumbnail */}
-      {value && (
+      {Boolean(value && typeof value === 'string' && value.trim()) && (
         <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 group">
-          <img src={value} alt="Preview" className="w-full h-full object-cover" />
+          <img src={value.trim()} alt="Preview" className="w-full h-full object-cover" />
           <button
             type="button"
             onClick={() => onChange('')}

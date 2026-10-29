@@ -5,7 +5,7 @@ import { saveAdBanner, deleteAdBanner } from '../../lib/supabase';
 import { useToast } from '../../context/ToastContext';
 import ImageUploadField from './ImageUploadField';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
-import { Plus, Edit2, Trash2, Flame, X, ArrowLeft } from 'lucide-react';
+import { Plus, Edit2, Trash2, Flame, X, ArrowLeft, Image as ImageIcon } from 'lucide-react';
 
 export default function AdminAdBanners() {
   const { adBanners, setAdBanners } = useStore();
@@ -115,7 +115,7 @@ export default function AdminAdBanners() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h4 className="text-sm font-bold text-white flex items-center gap-2">
             <Flame className="w-4 h-4 text-amber-500" />
@@ -128,7 +128,7 @@ export default function AdminAdBanners() {
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-colors"
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-colors shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>إضافة إعلان جديد</span>
@@ -142,7 +142,14 @@ export default function AdminAdBanners() {
             className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-md flex flex-col justify-between"
           >
             <div className="relative aspect-[16/9] bg-slate-950 flex items-center justify-center overflow-hidden">
-              <img src={ad.image_url} alt={ad.title || 'إعلان'} className="w-full h-full object-contain" />
+              {ad.image_url && ad.image_url.trim() ? (
+                <img src={ad.image_url.trim()} alt={ad.title || 'إعلان'} className="w-full h-full object-contain" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 gap-1 p-2">
+                  <ImageIcon className="w-8 h-8 opacity-40" />
+                  <span className="text-[11px] text-slate-500">بدون صورة</span>
+                </div>
+              )}
               {ad.title && (
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
               )}

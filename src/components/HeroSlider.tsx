@@ -56,11 +56,15 @@ export default function HeroSlider() {
             className="absolute inset-0"
           >
             {/* Background Image with Overlay */}
-            <img
-              src={current.image_url}
-              alt={current.title}
-              className="w-full h-full object-cover object-center"
-            />
+            {current.image_url && current.image_url.trim() ? (
+              <img
+                src={current.image_url.trim()}
+                alt={current.title}
+                className="w-full h-full object-cover object-center"
+              />
+            ) : (
+              <div className="w-full h-full bg-slate-900" />
+            )}
             <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent" />
             <div className="absolute inset-0 bg-radial-at-c from-transparent via-slate-950/40 to-slate-950/90" />
 

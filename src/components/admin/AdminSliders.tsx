@@ -112,7 +112,7 @@ export default function AdminSliders() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h4 className="text-sm font-bold text-white flex items-center gap-2">
             <Image className="w-4 h-4 text-amber-500" />
@@ -125,7 +125,7 @@ export default function AdminSliders() {
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md"
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>إضافة بانر جديد</span>
@@ -139,11 +139,17 @@ export default function AdminSliders() {
             className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden shadow-md flex flex-col justify-between"
           >
             <div className="relative aspect-[16/8] bg-slate-950">
-              <img
-                src={slide.image_url}
-                alt={slide.title}
-                className="w-full h-full object-cover"
-              />
+              {slide.image_url && slide.image_url.trim() ? (
+                <img
+                  src={slide.image_url.trim()}
+                  alt={slide.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-600">
+                  <Image className="w-10 h-10 opacity-30" />
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
               {slide.tag && (
                 <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px]">

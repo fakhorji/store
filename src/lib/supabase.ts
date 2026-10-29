@@ -19,6 +19,7 @@ import {
   INITIAL_FAQS,
   INITIAL_SETTINGS,
   INITIAL_CURRENCY_SETTINGS,
+  INITIAL_PAYMENT_METHODS,
 } from '../data/mockData';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://tedqbmbiqhyrodislltz.supabase.co';
@@ -37,21 +38,71 @@ const STORAGE_KEYS = {
   CURRENCY: 'dz_store_currency',
 };
 
-// Safe local storage helpers
-function getLocal<T>(key: string, fallback: T): T {
+// In-memory cache to guarantee zero storage quota crashes and instant UI updates
+const memoryCache: Record<string, any> = {};
+
+function sanitizeForStorage<T>(value: T): any {
+  if (!value) return value;
   try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : fallback;
+    const rawStr = JSON.stringify(value);
+    // If entire payload is under 80KB, save as is
+    if (rawStr.length < 80 * 1024) {
+      return value;
+    }
+    // If large payload (e.g. uploaded base64 banner images), strip out huge base64 image strings from localStorage copy
+    // Full images remain 100% intact in memoryCache, React state, and Supabase!
+    return JSON.parse(rawStr, (_key, val) => {
+      if (typeof val === 'string' && val.startsWith('data:image/') && val.length > 5000) {
+        return '';
+      }
+      return val;
+    });
   } catch {
-    return fallback;
+    return value;
   }
 }
 
-function setLocal<T>(key: string, value: T): void {
+// Safe local storage helpers with In-Memory fallback & QuotaExceeded recovery
+function getLocal<T>(key: string, fallback: T): T {
+  if (memoryCache[key] !== undefined) {
+    return memoryCache[key] as T;
+  }
   try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
-    console.error('Local storage save error', e);
+    const item = localStorage.getItem(key);
+    if (item) {
+      const parsed = JSON.parse(item);
+      memoryCache[key] = parsed;
+      return parsed;
+    }
+  } catch {
+    // Return fallback if parsing fails
+  }
+  memoryCache[key] = fallback;
+  return fallback;
+}
+
+function setLocal<T>(key: string, value: T): void {
+  // 1. Always store the full pristine data in memoryCache first
+  memoryCache[key] = value;
+
+  // 2. Attempt safe localStorage persistence with quota handling
+  try {
+    const sanitized = sanitizeForStorage(value);
+    localStorage.setItem(key, JSON.stringify(sanitized));
+  } catch (e: any) {
+    // If QuotaExceededError occurs, gracefully clean up large cached images
+    if (
+      e?.name === 'QuotaExceededError' ||
+      e?.code === 22 ||
+      e?.code === 1014 ||
+      e?.number === -2147024882
+    ) {
+      try {
+        localStorage.removeItem(STORAGE_KEYS.AD_BANNERS);
+        localStorage.removeItem(STORAGE_KEYS.SLIDERS);
+        localStorage.removeItem(STORAGE_KEYS.PRODUCTS);
+      } catch {}
+    }
   }
 }
 
@@ -89,6 +140,63 @@ export async function testSupabaseConnection(): Promise<{ connected: boolean; me
   }
 }
 
+// One-time sanitization of legacy mock data in local storage
+try {
+  const cachedProds = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+  if (cachedProds && cachedProds.includes('prod-freefire')) {
+    localStorage.removeItem(STORAGE_KEYS.PRODUCTS);
+    localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+    localStorage.removeItem(STORAGE_KEYS.SLIDERS);
+  }
+} catch {}
+
+// Synchronous Initial Cache Getters (for instant 0ms initial load without flicker)
+export function getInitialCategories(): Category[] {
+  return getLocal<Category[]>(STORAGE_KEYS.CATEGORIES, []);
+}
+
+export function getInitialProducts(): Product[] {
+  return getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, []);
+}
+
+export function getInitialSliders(): SliderImage[] {
+  return getLocal<SliderImage[]>(STORAGE_KEYS.SLIDERS, []);
+}
+
+export function getInitialAdBanners(): AdBanner[] {
+  return getLocal<AdBanner[]>(STORAGE_KEYS.AD_BANNERS, []);
+}
+
+export function getInitialNews(): NewsItem[] {
+  return getLocal<NewsItem[]>(STORAGE_KEYS.NEWS, []);
+}
+
+export function getInitialFAQs(): FAQItem[] {
+  return getLocal<FAQItem[]>(STORAGE_KEYS.FAQS, []);
+}
+
+export function getInitialSettings(): StoreSettings {
+  const s = getLocal<StoreSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+  try {
+    const savedName = localStorage.getItem('dz_store_name');
+    if (savedName && savedName.trim()) {
+      s.store_name = savedName.trim();
+    }
+    const savedLogo = localStorage.getItem('dz_store_logo');
+    if (savedLogo) {
+      s.logo_url = savedLogo;
+    }
+  } catch {}
+  if (!s.payment_methods || !Array.isArray(s.payment_methods)) {
+    s.payment_methods = [];
+  }
+  return s;
+}
+
+export function getInitialCurrencySettings(): CurrencySettings {
+  return getLocal<CurrencySettings>(STORAGE_KEYS.CURRENCY, INITIAL_CURRENCY_SETTINGS);
+}
+
 // -------------------------------------------------------------
 // Settings
 // -------------------------------------------------------------
@@ -96,10 +204,21 @@ export async function getStoreSettings(): Promise<StoreSettings> {
   try {
     const { data, error } = await supabase.from('settings').select('*').limit(1).maybeSingle();
     if (!error && data) {
-      const merged = { ...INITIAL_SETTINGS, ...data };
+      const merged: StoreSettings = {
+        ...INITIAL_SETTINGS,
+        ...data,
+        payment_methods: Array.isArray(data.payment_methods) ? data.payment_methods : [],
+      };
       setLocal(STORAGE_KEYS.SETTINGS, merged);
       if (merged.store_name) {
-        localStorage.setItem('dz_store_name', merged.store_name);
+        try {
+          localStorage.setItem('dz_store_name', merged.store_name);
+        } catch {}
+      }
+      if (merged.logo_url) {
+        try {
+          localStorage.setItem('dz_store_logo', merged.logo_url);
+        } catch {}
       }
       return merged;
     }
@@ -112,19 +231,29 @@ export async function getStoreSettings(): Promise<StoreSettings> {
 export async function saveStoreSettings(settings: StoreSettings): Promise<boolean> {
   setLocal(STORAGE_KEYS.SETTINGS, settings);
   if (settings.store_name) {
-    localStorage.setItem('dz_store_name', settings.store_name);
+    try {
+      localStorage.setItem('dz_store_name', settings.store_name);
+    } catch {}
+  }
+  if (settings.logo_url) {
+    try {
+      localStorage.setItem('dz_store_logo', settings.logo_url);
+    } catch {}
   }
 
   try {
+    // Strip client-only credentials so PostgREST doesn't reject with "Could not find column"
+    const { admin_email, admin_password, ...dbSettings } = settings as any;
     const payload = {
       id: 'default_settings',
-      ...settings,
+      ...dbSettings,
+      payment_methods: settings.payment_methods || [],
       updated_at: new Date().toISOString(),
     };
     const { error } = await supabase.from('settings').upsert([payload]);
     if (error) {
-      console.warn('Full settings upsert returned error, executing fallback upsert:', error.message);
-      // Fallback in case newer columns are not yet added in user Supabase SQL
+      console.warn('Full settings upsert returned error, executing safe fallback upsert:', error.message);
+      // Safe fallback ensuring payment_methods and core settings are always saved
       const safePayload = {
         id: 'default_settings',
         store_name: settings.store_name,
@@ -132,8 +261,9 @@ export async function saveStoreSettings(settings: StoreSettings): Promise<boolea
         whatsapp_number: settings.whatsapp_number,
         whatsapp_prefix: settings.whatsapp_prefix,
         logo_url: settings.logo_url,
-        admin_email: settings.admin_email,
-        admin_password: settings.admin_password,
+        payment_methods: settings.payment_methods || [],
+        currency_api_endpoint: settings.currency_api_endpoint,
+        currency_api_key: settings.currency_api_key,
         updated_at: new Date().toISOString(),
       };
       await supabase.from('settings').upsert([safePayload]);
@@ -213,18 +343,18 @@ export async function getCategories(): Promise<Category[]> {
       .select('*')
       .order('sort_order', { ascending: true });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       setLocal(STORAGE_KEYS.CATEGORIES, data);
       return data;
     }
   } catch (err) {
     console.warn('Supabase categories fetch error', err);
   }
-  return getLocal<Category[]>(STORAGE_KEYS.CATEGORIES, INITIAL_CATEGORIES);
+  return getLocal<Category[]>(STORAGE_KEYS.CATEGORIES, []);
 }
 
 export async function saveCategory(category: Category): Promise<Category> {
-  const current = getLocal<Category[]>(STORAGE_KEYS.CATEGORIES, INITIAL_CATEGORIES);
+  const current = getLocal<Category[]>(STORAGE_KEYS.CATEGORIES, []);
   const existingIdx = current.findIndex((c) => c.id === category.id);
   let updatedList: Category[];
   if (existingIdx >= 0) {
@@ -244,7 +374,7 @@ export async function saveCategory(category: Category): Promise<Category> {
 }
 
 export async function deleteCategory(id: string): Promise<boolean> {
-  const current = getLocal<Category[]>(STORAGE_KEYS.CATEGORIES, INITIAL_CATEGORIES);
+  const current = getLocal<Category[]>(STORAGE_KEYS.CATEGORIES, []);
   const updated = current.filter((c) => c.id !== id);
   setLocal(STORAGE_KEYS.CATEGORIES, updated);
 
@@ -265,7 +395,7 @@ export async function getProducts(): Promise<Product[]> {
       .from('products')
       .select('*, packages(*)');
 
-    if (!prodErr && productsData && productsData.length > 0) {
+    if (!prodErr && productsData) {
       const formatted: Product[] = productsData.map((p: any) => ({
         ...p,
         packages: p.packages || [],
@@ -276,11 +406,11 @@ export async function getProducts(): Promise<Product[]> {
   } catch (err) {
     console.warn('Supabase products fetch error', err);
   }
-  return getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+  return getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, []);
 }
 
 export async function saveProduct(product: Product): Promise<Product> {
-  const current = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+  const current = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, []);
   const existingIdx = current.findIndex((p) => p.id === product.id);
   let updatedList: Product[];
   if (existingIdx >= 0) {
@@ -311,7 +441,7 @@ export async function saveProduct(product: Product): Promise<Product> {
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
-  const current = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+  const current = getLocal<Product[]>(STORAGE_KEYS.PRODUCTS, []);
   const updated = current.filter((p) => p.id !== id);
   setLocal(STORAGE_KEYS.PRODUCTS, updated);
 
@@ -334,18 +464,18 @@ export async function getSliders(): Promise<SliderImage[]> {
       .select('*')
       .order('sort_order', { ascending: true });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       setLocal(STORAGE_KEYS.SLIDERS, data);
       return data;
     }
   } catch (err) {
     console.warn('Supabase slider error', err);
   }
-  return getLocal<SliderImage[]>(STORAGE_KEYS.SLIDERS, INITIAL_SLIDERS);
+  return getLocal<SliderImage[]>(STORAGE_KEYS.SLIDERS, []);
 }
 
 export async function saveSlider(slider: SliderImage): Promise<SliderImage> {
-  const current = getLocal<SliderImage[]>(STORAGE_KEYS.SLIDERS, INITIAL_SLIDERS);
+  const current = getLocal<SliderImage[]>(STORAGE_KEYS.SLIDERS, []);
   const idx = current.findIndex((s) => s.id === slider.id);
   let updated: SliderImage[];
   if (idx >= 0) {
@@ -365,7 +495,7 @@ export async function saveSlider(slider: SliderImage): Promise<SliderImage> {
 }
 
 export async function deleteSlider(id: string): Promise<boolean> {
-  const current = getLocal<SliderImage[]>(STORAGE_KEYS.SLIDERS, INITIAL_SLIDERS);
+  const current = getLocal<SliderImage[]>(STORAGE_KEYS.SLIDERS, []);
   setLocal(STORAGE_KEYS.SLIDERS, current.filter((s) => s.id !== id));
   try {
     await supabase.from('slider_images').delete().eq('id', id);
@@ -379,24 +509,29 @@ export async function deleteSlider(id: string): Promise<boolean> {
 // Continuous Ad Banners (سلايدر الإعلانات المستمر)
 // -------------------------------------------------------------
 export async function getAdBanners(): Promise<AdBanner[]> {
+  // If cached in memory, return immediately for instant UI
+  if (memoryCache[STORAGE_KEYS.AD_BANNERS] && Array.isArray(memoryCache[STORAGE_KEYS.AD_BANNERS])) {
+    return memoryCache[STORAGE_KEYS.AD_BANNERS];
+  }
   try {
     const { data, error } = await supabase
       .from('ad_banners')
       .select('*')
       .order('sort_order', { ascending: true });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
+      memoryCache[STORAGE_KEYS.AD_BANNERS] = data;
       setLocal(STORAGE_KEYS.AD_BANNERS, data);
       return data;
     }
   } catch (err) {
     console.warn('Supabase ad banners fetch error', err);
   }
-  return getLocal<AdBanner[]>(STORAGE_KEYS.AD_BANNERS, INITIAL_AD_BANNERS);
+  return getLocal<AdBanner[]>(STORAGE_KEYS.AD_BANNERS, []);
 }
 
 export async function saveAdBanner(banner: AdBanner): Promise<AdBanner> {
-  const current = getLocal<AdBanner[]>(STORAGE_KEYS.AD_BANNERS, INITIAL_AD_BANNERS);
+  const current = getLocal<AdBanner[]>(STORAGE_KEYS.AD_BANNERS, []);
   const idx = current.findIndex((b) => b.id === banner.id);
   let updated: AdBanner[];
   if (idx >= 0) {
@@ -405,6 +540,7 @@ export async function saveAdBanner(banner: AdBanner): Promise<AdBanner> {
   } else {
     updated = [...current, banner];
   }
+  memoryCache[STORAGE_KEYS.AD_BANNERS] = updated;
   setLocal(STORAGE_KEYS.AD_BANNERS, updated);
 
   try {
@@ -416,8 +552,10 @@ export async function saveAdBanner(banner: AdBanner): Promise<AdBanner> {
 }
 
 export async function deleteAdBanner(id: string): Promise<boolean> {
-  const current = getLocal<AdBanner[]>(STORAGE_KEYS.AD_BANNERS, INITIAL_AD_BANNERS);
-  setLocal(STORAGE_KEYS.AD_BANNERS, current.filter((b) => b.id !== id));
+  const current = getLocal<AdBanner[]>(STORAGE_KEYS.AD_BANNERS, []);
+  const updated = current.filter((b) => b.id !== id);
+  memoryCache[STORAGE_KEYS.AD_BANNERS] = updated;
+  setLocal(STORAGE_KEYS.AD_BANNERS, updated);
   try {
     await supabase.from('ad_banners').delete().eq('id', id);
   } catch (e) {
@@ -436,18 +574,18 @@ export async function getNews(): Promise<NewsItem[]> {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       setLocal(STORAGE_KEYS.NEWS, data);
       return data;
     }
   } catch (err) {
     console.warn('Supabase news error', err);
   }
-  return getLocal<NewsItem[]>(STORAGE_KEYS.NEWS, INITIAL_NEWS);
+  return getLocal<NewsItem[]>(STORAGE_KEYS.NEWS, []);
 }
 
 export async function saveNews(news: NewsItem): Promise<NewsItem> {
-  const current = getLocal<NewsItem[]>(STORAGE_KEYS.NEWS, INITIAL_NEWS);
+  const current = getLocal<NewsItem[]>(STORAGE_KEYS.NEWS, []);
   const idx = current.findIndex((n) => n.id === news.id);
   let updated: NewsItem[];
   if (idx >= 0) {
@@ -467,7 +605,7 @@ export async function saveNews(news: NewsItem): Promise<NewsItem> {
 }
 
 export async function deleteNews(id: string): Promise<boolean> {
-  const current = getLocal<NewsItem[]>(STORAGE_KEYS.NEWS, INITIAL_NEWS);
+  const current = getLocal<NewsItem[]>(STORAGE_KEYS.NEWS, []);
   setLocal(STORAGE_KEYS.NEWS, current.filter((n) => n.id !== id));
   try {
     await supabase.from('news_items').delete().eq('id', id);
@@ -487,18 +625,18 @@ export async function getFAQs(): Promise<FAQItem[]> {
       .select('*')
       .order('sort_order', { ascending: true });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data) {
       setLocal(STORAGE_KEYS.FAQS, data);
       return data;
     }
   } catch (err) {
     console.warn('Supabase FAQs error', err);
   }
-  return getLocal<FAQItem[]>(STORAGE_KEYS.FAQS, INITIAL_FAQS);
+  return getLocal<FAQItem[]>(STORAGE_KEYS.FAQS, []);
 }
 
 export async function saveFAQ(faq: FAQItem): Promise<FAQItem> {
-  const current = getLocal<FAQItem[]>(STORAGE_KEYS.FAQS, INITIAL_FAQS);
+  const current = getLocal<FAQItem[]>(STORAGE_KEYS.FAQS, []);
   const idx = current.findIndex((f) => f.id === faq.id);
   let updated: FAQItem[];
   if (idx >= 0) {
@@ -518,7 +656,7 @@ export async function saveFAQ(faq: FAQItem): Promise<FAQItem> {
 }
 
 export async function deleteFAQ(id: string): Promise<boolean> {
-  const current = getLocal<FAQItem[]>(STORAGE_KEYS.FAQS, INITIAL_FAQS);
+  const current = getLocal<FAQItem[]>(STORAGE_KEYS.FAQS, []);
   setLocal(STORAGE_KEYS.FAQS, current.filter((f) => f.id !== id));
   try {
     await supabase.from('faqs').delete().eq('id', id);

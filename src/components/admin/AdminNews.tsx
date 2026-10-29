@@ -97,7 +97,7 @@ export default function AdminNews() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h4 className="text-sm font-bold text-white flex items-center gap-2">
             <Megaphone className="w-4 h-4 text-amber-500" />
@@ -110,7 +110,7 @@ export default function AdminNews() {
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md"
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>إضافة تنبيه جديد</span>
@@ -121,33 +121,33 @@ export default function AdminNews() {
         {news.map((item) => (
           <div
             key={item.id}
-            className="flex items-center justify-between p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs"
+            className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs gap-3"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-start sm:items-center gap-3 min-w-0">
               {item.type === 'promo' && (
-                <div className="p-2 rounded-lg bg-red-500/10 text-red-400">
+                <div className="p-2 rounded-lg bg-red-500/10 text-red-400 shrink-0">
                   <Flame className="w-4 h-4" />
                 </div>
               )}
               {item.type === 'alert' && (
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 shrink-0">
                   <AlertTriangle className="w-4 h-4" />
                 </div>
               )}
               {item.type === 'info' && (
-                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
+                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 shrink-0">
                   <Bell className="w-4 h-4" />
                 </div>
               )}
-              <div>
-                <p className="font-bold text-white">{item.message}</p>
-                <span className="text-[10px] text-slate-500">
+              <div className="min-w-0">
+                <p className="font-bold text-white break-words">{item.message}</p>
+                <span className="text-[10px] text-slate-500 block mt-0.5">
                   {item.is_active ? 'نشط في شريط الأخبار' : 'متوقف'}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
               <button
                 onClick={() => handleOpenEdit(item)}
                 className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400"

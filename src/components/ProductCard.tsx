@@ -86,12 +86,18 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       {/* Top Image Section */}
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
-        <img
-          src={product.image_url}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
-        />
+        {product.image_url && product.image_url.trim() ? (
+          <img
+            src={product.image_url.trim()}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-600">
+            <ShoppingBag className="w-10 h-10 opacity-30" />
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/30" />
 
         {/* Top Badges */}

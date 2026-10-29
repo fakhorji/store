@@ -111,7 +111,7 @@ export default function AdminCategories() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h4 className="text-sm font-bold text-white flex items-center gap-2">
             <Layers className="w-4 h-4 text-amber-500" />
@@ -124,15 +124,16 @@ export default function AdminCategories() {
 
         <button
           onClick={handleOpenAdd}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all"
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>إضافة تصنيف</span>
         </button>
       </div>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/90 shadow-lg overflow-hidden">
-        <table className="w-full text-right text-xs">
+      {/* Categories Desktop Table */}
+      <div className="hidden md:block rounded-2xl border border-slate-800 bg-slate-900/90 shadow-lg overflow-x-auto">
+        <table className="w-full text-right text-xs min-w-[550px]">
           <thead className="bg-slate-800/80 text-slate-300 font-bold border-b border-slate-700">
             <tr>
               <th className="p-3.5">اسم التصنيف</th>
@@ -189,6 +190,61 @@ export default function AdminCategories() {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Categories Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {categories.map((cat) => {
+          const parent = categories.find((c) => c.id === cat.parent_id);
+          return (
+            <div
+              key={cat.id}
+              className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 shadow-md space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-bold text-white text-xs">
+                  {cat.parent_id ? (
+                    <CornerDownLeft className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  ) : (
+                    <Layers className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  )}
+                  <span>{cat.name}</span>
+                </div>
+                <span className="font-mono text-[10px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">
+                  #{cat.sort_order}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-800/80">
+                <span className="font-mono text-[11px] text-slate-400">{cat.slug}</span>
+                {parent ? (
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700 font-semibold text-[10px]">
+                    تابع لـ: {parent.name}
+                  </span>
+                ) : (
+                  <span className="text-slate-500 text-[10px]">تصنيف رئيسي</span>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80">
+                <button
+                  onClick={() => handleOpenEdit(cat)}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs transition-colors"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>تعديل</span>
+                </button>
+                <button
+                  onClick={() => handleDelete(cat.id, cat.name)}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-rose-950/40 hover:bg-rose-900/50 text-rose-400 font-bold text-xs border border-rose-900/40 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>حذف</span>
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Category Modal */}
